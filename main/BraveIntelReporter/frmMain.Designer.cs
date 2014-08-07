@@ -29,21 +29,24 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmMain));
             this.txtIntel = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.lblReported = new System.Windows.Forms.Label();
             this.lblFailed = new System.Windows.Forms.Label();
             this.timer = new System.Windows.Forms.Timer(this.components);
+            this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.SuspendLayout();
             // 
             // txtIntel
             // 
-            this.txtIntel.Location = new System.Drawing.Point(12, 12);
+            this.txtIntel.Location = new System.Drawing.Point(10, 12);
             this.txtIntel.Multiline = true;
             this.txtIntel.Name = "txtIntel";
             this.txtIntel.ReadOnly = true;
-            this.txtIntel.Size = new System.Drawing.Size(671, 350);
+            this.txtIntel.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.txtIntel.Size = new System.Drawing.Size(606, 350);
             this.txtIntel.TabIndex = 0;
             // 
             // label1
@@ -87,19 +90,30 @@
             this.timer.Interval = 250;
             this.timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
+            // notifyIcon1
+            // 
+            this.notifyIcon1.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon1.Icon")));
+            this.notifyIcon1.Text = "BraveReporter is minimized (still reporting)";
+            this.notifyIcon1.Visible = true;
+            this.notifyIcon1.DoubleClick += new System.EventHandler(this.notifyIcon1_DoubleClick);
+            // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(695, 441);
+            this.ClientSize = new System.Drawing.Size(627, 411);
             this.Controls.Add(this.lblFailed);
             this.Controls.Add(this.lblReported);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.txtIntel);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximizeBox = false;
             this.Name = "frmMain";
             this.Text = "Brave Intel Reporter";
             this.Load += new System.EventHandler(this.frmMain_Load);
+            this.ResizeEnd += new System.EventHandler(this.frmMain_ResizeEnd);
+            this.Resize += new System.EventHandler(this.frmMain_Resize);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -113,6 +127,7 @@
         private System.Windows.Forms.Label lblReported;
         private System.Windows.Forms.Label lblFailed;
         private System.Windows.Forms.Timer timer;
+        private System.Windows.Forms.NotifyIcon notifyIcon1;
     }
 }
 

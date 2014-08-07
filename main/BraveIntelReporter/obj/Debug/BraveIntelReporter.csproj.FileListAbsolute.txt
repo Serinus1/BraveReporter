@@ -7,3 +7,7 @@ C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\bin\Debu
 C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\bin\Debug\BraveIntelReporter.pdb
 C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.exe
 C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.pdb
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\bin\Debug\BraveIntelReporter.exe.manifest
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\bin\Debug\BraveIntelReporter.application
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.exe.manifest
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.application

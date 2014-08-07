@@ -20,6 +20,7 @@ namespace BraveIntelReporter
         long failed = 0;
         public List<string> RoomsToMonitor;
         public List<FileInfo> FilesToMonitor;
+        public DateTime LastTimeReported = DateTime.Now;
         public int MonitorFrequency = 500;
         public Dictionary<FileInfo, string> LastLinesReported = new Dictionary<FileInfo, string>();
         public Uri ReportServer;
@@ -50,7 +51,7 @@ namespace BraveIntelReporter
             foreach (XmlNode node in configFile.SelectNodes("BraveReporterSettings/chatrooms/chatroom"))
                 if (node.Attributes["type"].InnerText == "intel") RoomsToMonitor.Add(node.InnerText);
             ReportServer = new Uri(configFile.SelectSingleNode("BraveReporterSettings/IntelServer").InnerText);
-            ReportServer = new Uri(configFile.SelectSingleNode("BraveReporterSettings/MonitorFrequency").InnerText);
+            MonitorFrequency = int.Parse(configFile.SelectSingleNode("BraveReporterSettings/MonitorFrequency").InnerText);
         }
 
         internal void GetIntelLogFiles()
@@ -123,15 +124,17 @@ namespace BraveIntelReporter
                 {
                     string line = logFileReader.ReadLine();
                     if (!line.StartsWith("[ 20")) continue;
+                    if ((DateTime.UtcNow - LastTimeReported).TotalMinutes > 2) LastLinesReported[logfile] = string.Empty;
                     double timeFromNow = (DateTime.Parse(line.Substring(2, 19)) - DateTime.UtcNow).TotalMinutes;
-                    if (Math.Abs(timeFromNow) > 5) continue; // Don't report intel that hasn't happened in the last 5 minutes.
+                    if (Math.Abs(timeFromNow) > 2) continue; // Don't report intel that hasn't happened in the last 5 minutes.
                     if (line == LastLinesReported[logfile] || LastLinesReported[logfile] == string.Empty)
                         lastlinefound = true;
                     if (lastlinefound && line != LastLinesReported[logfile]) // we've past the last line reported
                     {
                         LastLinesReported[logfile] = line;
+                        LastTimeReported = DateTime.Parse(line.Substring(2, 19));
                         ReportIntel(line + "\n");
-                        txtIntel.Text = txtIntel.Text + line + "\r\n";
+                        txtIntel.Text = txtIntel.Text + "[" + line.Substring(13) + "\r\n";
                     }
                 }
 
@@ -140,6 +143,36 @@ namespace BraveIntelReporter
                 logFileStream.Close();
                 
             }
+        }
+
+        private void frmMain_ResizeEnd(object sender, EventArgs e)
+        {
+
+        }
+
+        private void frmMain_Resize(object sender, EventArgs e)
+        {
+            if (this.WindowState == FormWindowState.Minimized)
+            {
+                this.Hide();
+                notifyIcon1.Visible = true;
+                notifyIcon1.BalloonTipText = "Minimized to system tray (still reporting).";
+                notifyIcon1.ShowBalloonTip(500);
+                this.ShowInTaskbar = false;
+            }
+            else if (this.WindowState == FormWindowState.Normal)
+            {
+                notifyIcon1.Visible = false;
+                this.ShowInTaskbar = true;
+            }
+        }
+
+        private void notifyIcon1_DoubleClick(object sender, EventArgs e)
+        {
+            this.Show();
+            this.WindowState = FormWindowState.Normal;
+            this.ShowInTaskbar = true;
+            notifyIcon1.Visible = false;
         }
     }
 }
