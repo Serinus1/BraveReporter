@@ -1,1 +1,9 @@
 C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\bin\Debug\BraveIntelReporter.exe.config
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.csprojResolveAssemblyReference.cache
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.frmMain.resources
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.Properties.Resources.resources
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.csproj.GenerateResource.Cache
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\bin\Debug\BraveIntelReporter.exe
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\bin\Debug\BraveIntelReporter.pdb
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.exe
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.pdb

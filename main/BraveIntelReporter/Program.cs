@@ -5,6 +5,8 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace BraveIntelReporter
 {
@@ -21,17 +23,6 @@ namespace BraveIntelReporter
             Application.Run(new frmMain());
         }
 
-        internal void GetConfig()
-        {
-            WebClient client = new WebClient();
-            client.DownloadFile("http://serinus.us/eve/intelConfig.xml", "intelConfig.xml");
 
-        }
-        internal List<File> GetIntelLogFiles()
-        {
-            // Get files with correct name and greatest timestamp <= now.
-            var files = new DirectoryInfo(this.Path)
-                    .GetFiles(this.Name + "_*.txt", SearchOption.TopDirectoryOnly);
-        }
     }
 }
