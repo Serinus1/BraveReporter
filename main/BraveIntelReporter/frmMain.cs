@@ -22,6 +22,7 @@ namespace BraveIntelReporter
         public List<FileInfo> FilesToMonitor;
         public DateTime LastTimeReported = DateTime.Now;
         public int MonitorFrequency = 500;
+        public string MapURL = string.Empty;
         public Dictionary<FileInfo, string> LastLinesReported = new Dictionary<FileInfo, string>();
         public Uri ReportServer;
         private static readonly string defaultLogDirectory = System.IO.Path.Combine(
@@ -39,6 +40,7 @@ namespace BraveIntelReporter
             GetIntelLogFiles();
             timer.Interval = MonitorFrequency;
             timer.Start();
+            ReportIntel(string.Empty, "start");
         }
 
         internal void GetConfig()
@@ -52,6 +54,8 @@ namespace BraveIntelReporter
                 if (node.Attributes["type"].InnerText == "intel") RoomsToMonitor.Add(node.InnerText);
             ReportServer = new Uri(configFile.SelectSingleNode("BraveReporterSettings/IntelServer").InnerText);
             MonitorFrequency = int.Parse(configFile.SelectSingleNode("BraveReporterSettings/MonitorFrequency").InnerText);
+            if (configFile.SelectSingleNode("BraveReporterSettings/MapLink") != null)
+                MapURL = configFile.SelectSingleNode("BraveReporterSettings/MapLink").InnerText;
         }
 
         internal void GetIntelLogFiles()
@@ -78,6 +82,8 @@ namespace BraveIntelReporter
             watcher.NotifyFilter = NotifyFilters.CreationTime;
             watcher.Created += new FileSystemEventHandler(FileCreated);
             watcher.EnableRaisingEvents = true;
+            lblMonitoringFiles.Text = string.Empty;
+            foreach (FileInfo fi in FilesToMonitor) lblMonitoringFiles.Text += fi.Name + "\r\n";
             
         }
 
@@ -86,19 +92,20 @@ namespace BraveIntelReporter
             GetIntelLogFiles();
         }
 
-        private void ReportIntel(string lastline)
+        private void ReportIntel(string lastline, string status = "")
         {
             try
             {
                 // Also send the message to Kiu Nakamura's Brave Server
-                Encoding myEncoding = System.Text.ASCIIEncoding.UTF8;
-                string postMessage = lastline;
-                    //string.Format("[ {0} ]{1}\n", timestamp.ToString("yyyy.MM.dd HH:mm:ss"), message);
+                Encoding myEncoding = System.Text.UTF8Encoding.UTF8;
+                lastline = lastline.Replace('"', '\'');
+                string postMessage = new ReportLine(lastline, status).ToJson();
 
                 WebClient client = new WebClient();
-                byte[] KiuResponse = client.UploadData(new Uri("http://eve.501gu.de/BIntel/intel"), "PUT", myEncoding.GetBytes(postMessage));
+                byte[] KiuResponse = client.UploadData(ReportServer, "PUT", myEncoding.GetBytes(postMessage));
                 Debug.Write("Kiu << " + postMessage);
                 Debug.Write("Kiu >> " + myEncoding.GetString(KiuResponse));
+                string temp = BitConverter.ToString(myEncoding.GetBytes(postMessage)).Replace("-", ":");
                 reported++;
             }
             catch (Exception ex)
@@ -111,6 +118,12 @@ namespace BraveIntelReporter
 
         private void timer_Tick(object sender, EventArgs e)
         {
+            if ((DateTime.UtcNow - LastTimeReported).TotalMinutes > 5)
+            {
+                GetIntelLogFiles();
+                ReportIntel(string.Empty, "running");
+                LastTimeReported = DateTime.UtcNow;
+            }
             lblReported.Text = reported.ToString();
             lblFailed.Text = failed.ToString();
             foreach (FileInfo logfile in FilesToMonitor)
@@ -123,21 +136,22 @@ namespace BraveIntelReporter
                 while (!logFileReader.EndOfStream)
                 {
                     string line = logFileReader.ReadLine();
+                    if (line.Length > 0) line = line.Remove(0, 1);
                     if (!line.StartsWith("[ 20")) continue;
                     if ((DateTime.UtcNow - LastTimeReported).TotalMinutes > 2) LastLinesReported[logfile] = string.Empty;
                     double timeFromNow = (DateTime.Parse(line.Substring(2, 19)) - DateTime.UtcNow).TotalMinutes;
-                    if (Math.Abs(timeFromNow) > 2) continue; // Don't report intel that hasn't happened in the last 5 minutes.
+                    if (Math.Abs(timeFromNow) > 2) continue; // Don't report intel that hasn't happened in the last 2 minutes.
                     if (line == LastLinesReported[logfile] || LastLinesReported[logfile] == string.Empty)
                         lastlinefound = true;
                     if (lastlinefound && line != LastLinesReported[logfile]) // we've past the last line reported
                     {
                         LastLinesReported[logfile] = line;
                         LastTimeReported = DateTime.Parse(line.Substring(2, 19));
-                        ReportIntel(line + "\n");
-                        txtIntel.Text = txtIntel.Text + "[" + line.Substring(13) + "\r\n";
+                        ReportIntel(line);
+                        txtIntel.AppendText("[" + line.Substring(13) + "\r\n");
                     }
                 }
-
+                
                 // Clean up
                 logFileReader.Close();
                 logFileStream.Close();
@@ -174,5 +188,31 @@ namespace BraveIntelReporter
             this.ShowInTaskbar = true;
             notifyIcon1.Visible = false;
         }
+
+        private void label4_Click(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            new frmAbout().ShowDialog();
+        }
+
+        private void mnuViewMap_Click(object sender, EventArgs e)
+        {
+            if (MapURL != string.Empty)
+            {
+                ProcessStartInfo sInfo = new ProcessStartInfo(MapURL);
+                Process.Start(sInfo);
+            }
+        }
+
+        private void frmMain_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            ReportIntel(string.Empty, "stop");
+        }
+
+
     }
 }

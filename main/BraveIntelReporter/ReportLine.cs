@@ -1,0 +1,50 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Deployment.Application;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace BraveIntelReporter
+{
+    public class ReportLine
+    {
+        public string Token = string.Empty;
+        string IntelLine = string.Empty;
+        string Status = string.Empty;
+
+        public ReportLine(string intel, string status = "")
+        {
+            IntelLine = intel;
+            Status = status;
+        }
+        public string ToJson()
+        {
+            StringBuilder sb = new StringBuilder("{");
+            sb.Append("\"version\":");
+            sb.Append(string.Format("\"{0}\",", Version));
+            sb.Append("\"token\":");
+            sb.Append(string.Format("\"{0}\",", Token));
+            sb.Append("\"text\":");
+            sb.Append(string.Format("\"{0}\"", IntelLine));
+            if (Status != string.Empty)
+            {
+                sb.Append(",");
+                sb.Append("\"status\":");
+                sb.Append(string.Format("\"{0}\"", Status));
+            }
+            sb.Append("}");
+            return sb.ToString();
+        }
+
+        public string Version
+        {
+            get
+            {
+                if (ApplicationDeployment.IsNetworkDeployed)
+                    return ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString();
+                else return "Development";
+            }
+        }
+    }
+}
