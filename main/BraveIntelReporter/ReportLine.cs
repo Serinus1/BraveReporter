@@ -9,7 +9,6 @@ namespace BraveIntelReporter
 {
     public class ReportLine
     {
-        public string Token = string.Empty;
         string IntelLine = string.Empty;
         string Status = string.Empty;
 
@@ -24,7 +23,7 @@ namespace BraveIntelReporter
             sb.Append("\"version\":");
             sb.Append(string.Format("\"{0}\",", Version));
             sb.Append("\"token\":");
-            sb.Append(string.Format("\"{0}\",", Token));
+            sb.Append(string.Format("\"{0}\",", Configuration.AuthToken));
             sb.Append("\"text\":");
             sb.Append(string.Format("\"{0}\"", IntelLine));
             if (Status != string.Empty)

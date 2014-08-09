@@ -18,15 +18,10 @@ namespace BraveIntelReporter
     {
         long reported = 0;
         long failed = 0;
-        public List<string> RoomsToMonitor;
         public List<FileInfo> FilesToMonitor;
         public DateTime LastTimeReported = DateTime.Now;
-        public int MonitorFrequency = 500;
-        public string MapURL = string.Empty;
         public Dictionary<FileInfo, string> LastLinesReported = new Dictionary<FileInfo, string>();
-        public Uri ReportServer;
-        private static readonly string defaultLogDirectory = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "EVE", "logs", "Chatlogs");
+        public bool EveIsRunning = false;
 
 
         public frmMain()
@@ -36,35 +31,21 @@ namespace BraveIntelReporter
 
         private void frmMain_Load(object sender, EventArgs e)
         {
-            GetConfig();
+            Configuration.GetConfig();
             GetIntelLogFiles();
-            timer.Interval = MonitorFrequency;
+            timer.Interval = Configuration.MonitorFrequency;
             timer.Start();
-            ReportIntel(string.Empty, "start");
         }
 
-        internal void GetConfig()
-        {
-            WebClient client = new WebClient();
-            client.DownloadFile("http://serinus.us/eve/intelGlobalConfig.xml", "intelGlobalConfig.xml");
-            RoomsToMonitor = new List<string>();
-            XmlDocument configFile = new XmlDocument();
-            configFile.Load("intelGlobalConfig.xml");
-            foreach (XmlNode node in configFile.SelectNodes("BraveReporterSettings/chatrooms/chatroom"))
-                if (node.Attributes["type"].InnerText == "intel") RoomsToMonitor.Add(node.InnerText);
-            ReportServer = new Uri(configFile.SelectSingleNode("BraveReporterSettings/IntelServer").InnerText);
-            MonitorFrequency = int.Parse(configFile.SelectSingleNode("BraveReporterSettings/MonitorFrequency").InnerText);
-            if (configFile.SelectSingleNode("BraveReporterSettings/MapLink") != null)
-                MapURL = configFile.SelectSingleNode("BraveReporterSettings/MapLink").InnerText;
-        }
+
 
         internal void GetIntelLogFiles()
         {
             FilesToMonitor = new List<FileInfo>();
             // Get files with correct name and greatest timestamp <= now.
-            foreach (string roomname in RoomsToMonitor)
+            foreach (string roomname in Configuration.RoomsToMonitor)
             {
-                FileInfo[] files = new DirectoryInfo(defaultLogDirectory)
+                FileInfo[] files = new DirectoryInfo(Configuration.LogDirectory)
                         .GetFiles(roomname + "_*.txt", SearchOption.TopDirectoryOnly);
                 files = files.OrderByDescending(f => f.LastWriteTime).ToArray();
                 if (files.Count() > 0) FilesToMonitor.Add(files[0]);  
@@ -78,7 +59,7 @@ namespace BraveIntelReporter
             foreach (FileInfo fi in removethese) LastLinesReported.Remove(fi);
 
             // If a new file is created, recheck to make sure we have the most up to date log files.
-            FileSystemWatcher watcher = new FileSystemWatcher(defaultLogDirectory);
+            FileSystemWatcher watcher = new FileSystemWatcher(Configuration.LogDirectory);
             watcher.NotifyFilter = NotifyFilters.CreationTime;
             watcher.Created += new FileSystemEventHandler(FileCreated);
             watcher.EnableRaisingEvents = true;
@@ -102,7 +83,7 @@ namespace BraveIntelReporter
                 string postMessage = new ReportLine(lastline, status).ToJson();
 
                 WebClient client = new WebClient();
-                byte[] KiuResponse = client.UploadData(ReportServer, "PUT", myEncoding.GetBytes(postMessage));
+                byte[] KiuResponse = client.UploadData(Configuration.ReportServer, "PUT", myEncoding.GetBytes(postMessage));
                 Debug.Write("Kiu << " + postMessage);
                 Debug.Write("Kiu >> " + myEncoding.GetString(KiuResponse));
                 string temp = BitConverter.ToString(myEncoding.GetBytes(postMessage)).Replace("-", ":");
@@ -118,6 +99,26 @@ namespace BraveIntelReporter
 
         private void timer_Tick(object sender, EventArgs e)
         {
+            // Check EVE Program Status
+            var processes = Process.GetProcesses().Where(p => p.ProcessName.ToLower() == "exefile").ToList();
+            if (!EveIsRunning && processes.Count == 0) return; // Eve still isn't running and we know it.
+            if (processes.Count == 0 && EveIsRunning) // We think EVE is running, but it's not.
+            {
+                // EVE is not running
+                timer.Interval = 300000;
+                EveIsRunning = false;
+                ReportIntel(string.Empty, "stop");
+                txtIntel.AppendText("EVE is not running.  Will recheck for EVE process on 5 minute intervals. \r\n");
+                return;
+            }
+            if (!EveIsRunning && processes.Count > 0) // We didn't think EVE was running, but it is.
+            {
+                timer.Interval = Configuration.MonitorFrequency;
+                txtIntel.AppendText("EVE started.\r\n");
+                ReportIntel(string.Empty, "start");
+                EveIsRunning = true;
+            }
+
             if ((DateTime.UtcNow - LastTimeReported).TotalMinutes > 5)
             {
                 GetIntelLogFiles();
@@ -201,9 +202,9 @@ namespace BraveIntelReporter
 
         private void mnuViewMap_Click(object sender, EventArgs e)
         {
-            if (MapURL != string.Empty)
+            if (Configuration.MapURL != string.Empty)
             {
-                ProcessStartInfo sInfo = new ProcessStartInfo(MapURL);
+                ProcessStartInfo sInfo = new ProcessStartInfo(Configuration.MapURL);
                 Process.Start(sInfo);
             }
         }
@@ -211,6 +212,11 @@ namespace BraveIntelReporter
         private void frmMain_FormClosed(object sender, FormClosedEventArgs e)
         {
             ReportIntel(string.Empty, "stop");
+        }
+
+        private void mnuSettings_Click(object sender, EventArgs e)
+        {
+            new frmSettings().ShowDialog();
         }
 
 
