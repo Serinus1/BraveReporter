@@ -117,6 +117,7 @@ namespace BraveIntelReporter
                 txtIntel.AppendText("EVE started.\r\n");
                 ReportIntel(string.Empty, "start");
                 EveIsRunning = true;
+                GetIntelLogFiles();
             }
 
             if ((DateTime.UtcNow - LastTimeReported).TotalMinutes > 5)

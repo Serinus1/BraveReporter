@@ -23,6 +23,8 @@ namespace BraveIntelReporter
             else labelVersion.Text = "Development Version";
 
             txtDescription.Text = string.Empty;
+            txtDescription.AppendText("Version 1.0.0.4 - When EVE process appears, recheck for new log files..");
+            txtDescription.AppendText("\r\n");
             txtDescription.AppendText("Version 1.0.0.3 - Added local settings.  Now checks for EVE process.  Auth Token implemented.");
             txtDescription.AppendText("\r\n");
             txtDescription.AppendText("Version 1.0.0.2 - Changed to JSON format (breaking change, old clients will no longer work). ");
