@@ -86,7 +86,7 @@ namespace BraveIntelReporter
             authtoken.InnerText = Configuration.AuthToken;
             rootNode.AppendChild(authtoken);
 
-            localSettings.Save("IntelReporterLocalSettings.xml");
+            localSettings.Save(System.IO.Path.Combine(MyFolder, "IntelReporterLocalSettings.xml"));
 
         }
     }
