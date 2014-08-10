@@ -79,30 +79,29 @@ namespace BraveIntelReporter
 
         private void ReportIntel(string lastline, string status = "")
         {
+            Encoding myEncoding = System.Text.UTF8Encoding.UTF8;
+            WebClient client = new WebClient();
             try
             {
                 if (lastline.Contains("EVE System > Channel MOTD:")) return;
-                Encoding myEncoding = System.Text.UTF8Encoding.UTF8;
                 lastline = lastline.Replace('"', '\'');
                 string postMessage = new ReportLine(lastline, status).ToJson();
 
-                WebClient client = new WebClient();
                 byte[] KiuResponse = client.UploadData(Configuration.ReportServer, "PUT", myEncoding.GetBytes(postMessage));
                 Debug.Write("Kiu << " + postMessage);
                 Debug.Write("\nKiu >> " + myEncoding.GetString(KiuResponse));
 
                 if (myEncoding.GetString(KiuResponse) == "OK\n") reported++;
-                else 
-                {
-                    txtIntel.AppendText(string.Format("Intel Server Error: {0}", myEncoding.GetString(KiuResponse)));
-                    if (myEncoding.GetString(KiuResponse) == "401") txtIntel.AppendText("Invalid Token: Please update your authentication token in settings.");
-                    if (myEncoding.GetString(KiuResponse) == "426") txtIntel.AppendText("Client version not supported.  Please close and restart application to update. (May require two restarts.)");
-                    failed++;
-                }
             }
             catch (Exception ex)
             {
                 failed++;
+                if (ex.Message == "The remote server returned an error: (401) Unauthorized.")
+                    txtIntel.AppendText("Authorization Token Invalid.  Try refreshing your auth token in settings.\r\n");
+                else if (ex.Message == "The remote server returned an error: (426) 426.")
+                    txtIntel.AppendText("Client version not supported.  Please close and restart application to update. (May require two restarts.)\r\n");
+                else
+                    txtIntel.AppendText(string.Format("Intel Server Error: {0}\r\n", ex.Message));
                 Debug.Write(string.Format("Exception: {0}", ex.Message));
             }
         }
