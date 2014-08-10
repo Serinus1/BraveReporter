@@ -23,6 +23,10 @@ namespace BraveIntelReporter
             else labelVersion.Text = "Development Version";
 
             txtDescription.Text = string.Empty;
+            txtDescription.AppendText("Version 1.0.0.7 - Fix a folder bug. ");
+            txtDescription.AppendText("\r\n");
+            txtDescription.AppendText("Version 1.0.0.6 - Support for server error messages. Changed log file search from last written to last accessed.  Changed config directory to My Documents\\Eve\\BraveIntelReporter. Better Run on Startup support. ");
+            txtDescription.AppendText("\r\n");
             txtDescription.AppendText("Version 1.0.0.5 - Added settings dialog on first run.");
             txtDescription.AppendText("\r\n");
             txtDescription.AppendText("Version 1.0.0.4 - When EVE process appears, recheck for new log files.");

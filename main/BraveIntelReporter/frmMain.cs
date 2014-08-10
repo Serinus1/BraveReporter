@@ -51,7 +51,7 @@ namespace BraveIntelReporter
             {
                 FileInfo[] files = new DirectoryInfo(Configuration.LogDirectory)
                         .GetFiles(roomname + "_*.txt", SearchOption.TopDirectoryOnly);
-                files = files.OrderByDescending(f => f.LastWriteTime).ToArray();
+                files = files.OrderByDescending(f => f.LastAccessTime).ToArray();
                 if (files.Count() > 0) FilesToMonitor.Add(files[0]);  
             }
             

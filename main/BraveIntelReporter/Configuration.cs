@@ -24,20 +24,23 @@ namespace BraveIntelReporter
         public static bool RunOnStartup = false;
         public static RegistryKey rkApp = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
         public static bool FirstRun = true;
+        public static string MyFolder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "EVE", "BraveIntelReporter");
 
         public static void GetConfig()
         {
+            if (!Directory.Exists(MyFolder)) Directory.CreateDirectory(MyFolder);
             GetGlobalConfig();
             GetLocalConfig();
         }
 
         private static void GetLocalConfig()
         {
-            if (File.Exists("IntelReporterLocalSettings.xml"))
+            
+            if (File.Exists(System.IO.Path.Combine(MyFolder, "IntelReporterLocalSettings.xml")))
             {
                 FirstRun = false;
                 XmlDocument configFile = new XmlDocument();
-                configFile.Load("IntelReporterLocalSettings.xml");
+                configFile.Load(System.IO.Path.Combine(MyFolder, "IntelReporterLocalSettings.xml"));
                 if (configFile.SelectSingleNode("BraveReporterSettings/LogDirectory") != null)
                     LogDirectory = configFile.SelectSingleNode("BraveReporterSettings/LogDirectory").InnerText;
                 if (configFile.SelectSingleNode("BraveReporterSettings/AuthToken") != null)
@@ -49,10 +52,10 @@ namespace BraveIntelReporter
         private static void GetGlobalConfig()
         {
             WebClient client = new WebClient();
-            client.DownloadFile("http://serinus.us/eve/intelGlobalConfig.xml", "intelGlobalConfig.xml");
+            client.DownloadFile("http://serinus.us/eve/intelGlobalConfig.xml", System.IO.Path.Combine(MyFolder, "intelGlobalConfig.xml"));
             RoomsToMonitor = new List<string>();
             XmlDocument configFile = new XmlDocument();
-            configFile.Load("intelGlobalConfig.xml");
+            configFile.Load(System.IO.Path.Combine(MyFolder, "intelGlobalConfig.xml"));
             foreach (XmlNode node in configFile.SelectNodes("BraveReporterSettings/chatrooms/chatroom"))
                 if (node.Attributes["type"].InnerText == "intel") RoomsToMonitor.Add(node.InnerText);
             ReportServer = new Uri(configFile.SelectSingleNode("BraveReporterSettings/IntelServer").InnerText);
