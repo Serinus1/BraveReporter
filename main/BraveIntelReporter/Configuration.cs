@@ -23,6 +23,7 @@ namespace BraveIntelReporter
         public static string AuthToken = string.Empty;
         public static bool RunOnStartup = false;
         public static RegistryKey rkApp = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+        public static bool FirstRun = true;
 
         public static void GetConfig()
         {
@@ -34,6 +35,7 @@ namespace BraveIntelReporter
         {
             if (File.Exists("IntelReporterLocalSettings.xml"))
             {
+                FirstRun = false;
                 XmlDocument configFile = new XmlDocument();
                 configFile.Load("IntelReporterLocalSettings.xml");
                 if (configFile.SelectSingleNode("BraveReporterSettings/LogDirectory") != null)

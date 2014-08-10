@@ -22,6 +22,7 @@ namespace BraveIntelReporter
         private void btnBrowseForChatlogs_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog fb = new FolderBrowserDialog();
+            fb.SelectedPath = Configuration.LogDirectory;
             if (fb.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 txtChatlogPath.Text = fb.SelectedPath;

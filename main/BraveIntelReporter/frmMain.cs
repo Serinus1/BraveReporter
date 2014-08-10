@@ -32,6 +32,10 @@ namespace BraveIntelReporter
         private void frmMain_Load(object sender, EventArgs e)
         {
             Configuration.GetConfig();
+            if (Configuration.FirstRun)
+            {
+                new frmSettings().ShowDialog();
+            }
             GetIntelLogFiles();
             timer.Interval = Configuration.MonitorFrequency;
             timer.Start();
