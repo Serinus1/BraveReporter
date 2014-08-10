@@ -81,7 +81,7 @@ namespace BraveIntelReporter
         {
             try
             {
-                // Also send the message to Kiu Nakamura's Brave Server
+                if (lastline.Contains("EVE System > Channel MOTD:")) return;
                 Encoding myEncoding = System.Text.UTF8Encoding.UTF8;
                 lastline = lastline.Replace('"', '\'');
                 string postMessage = new ReportLine(lastline, status).ToJson();
@@ -89,16 +89,22 @@ namespace BraveIntelReporter
                 WebClient client = new WebClient();
                 byte[] KiuResponse = client.UploadData(Configuration.ReportServer, "PUT", myEncoding.GetBytes(postMessage));
                 Debug.Write("Kiu << " + postMessage);
-                Debug.Write("Kiu >> " + myEncoding.GetString(KiuResponse));
-                string temp = BitConverter.ToString(myEncoding.GetBytes(postMessage)).Replace("-", ":");
-                reported++;
+                Debug.Write("\nKiu >> " + myEncoding.GetString(KiuResponse));
+
+                if (myEncoding.GetString(KiuResponse) == "OK\n") reported++;
+                else 
+                {
+                    txtIntel.AppendText(string.Format("Intel Server Error: {0}", myEncoding.GetString(KiuResponse)));
+                    if (myEncoding.GetString(KiuResponse) == "401") txtIntel.AppendText("Invalid Token: Please update your authentication token in settings.");
+                    if (myEncoding.GetString(KiuResponse) == "426") txtIntel.AppendText("Client version not supported.  Please close and restart application to update. (May require two restarts.)");
+                    failed++;
+                }
             }
             catch (Exception ex)
             {
                 failed++;
                 Debug.Write(string.Format("Exception: {0}", ex.Message));
             }
-
         }
 
         private void timer_Tick(object sender, EventArgs e)
