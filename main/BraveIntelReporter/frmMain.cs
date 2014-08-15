@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows.Forms;
 using System.Xml;
 
@@ -18,13 +19,175 @@ namespace BraveIntelReporter
     {
         long reported = 0;
         long failed = 0;
-        public List<FileInfo> FilesToMonitor;
-        public DateTime LastTimeReported = DateTime.Now;
+
         private DateTime LastGlobalConfigCheck = DateTime.Now;
-        public Dictionary<FileInfo, string> LastLinesReported = new Dictionary<FileInfo, string>();
-        public bool EveIsRunning = false;
 
+        private STATE state = STATE.INIT;
+        private System.Timers.Timer timerEve;
+        private System.Timers.Timer timerFileDiscover;
+        private System.Timers.Timer timerFileReader;
+        private bool eveRunningLast = false;
+        private Dictionary<String, FileInfo> roomToFile = new Dictionary<String, FileInfo>();
+        private Dictionary<String, String> roomToLastLine = new Dictionary<String, String>();
 
+        enum STATE
+        {
+            INIT, START, RUNNING, STOP
+        };
+
+        private Boolean isEveRunning()
+        {
+            return (Process.GetProcesses().Where(p => p.ProcessName.ToLower() == "exefile").ToList().Count() != 0);
+        }
+
+        private void updateLatestIntelFiles()
+        {
+            foreach (String roomName in Configuration.RoomsToMonitor)
+            {
+                Debug.WriteLine("KIU Checking for : " + roomName);
+
+                FileInfo[] files = new DirectoryInfo(Configuration.LogDirectory)
+                        .GetFiles(roomName + "_*.txt", SearchOption.TopDirectoryOnly);
+                FileInfo fi = files.OrderByDescending(f => f.LastWriteTime).First();
+                if (fi != null)
+                {
+                    roomToFile[roomName] = fi;
+                    Debug.WriteLine("KIU Found: " + fi);
+                }
+            }
+        }
+
+        private void setState(STATE nState)
+        {
+            if (state == nState)
+            {
+                return;
+            }
+
+            state = nState;
+            Debug.WriteLine("KIU STATE: " + nState);
+
+            if (STATE.START == nState)
+            {
+                timerFileDiscover.Start();
+                updateLatestIntelFiles();
+
+                timerFileReader.Start();
+            }
+            if (STATE.STOP == nState)
+            {
+                timerFileDiscover.Stop();
+                timerFileReader.Stop();
+            }
+        }
+
+        private void init()
+        {
+            timerEve = new System.Timers.Timer();
+            timerEve.Elapsed += new ElapsedEventHandler(execEveTimer);
+            timerEve.Interval = 10000;
+            timerEve.Start();
+           
+            timerFileDiscover = new System.Timers.Timer();
+            timerFileDiscover.Elapsed += new ElapsedEventHandler(execFileDiscoverTimer);
+            timerFileDiscover.Interval = 60000;
+
+            timerFileReader = new System.Timers.Timer();
+            timerFileReader.Elapsed += new ElapsedEventHandler(execFileReaderTimer);
+            timerFileReader.Interval = 1000;
+        }
+
+        private void execEveTimer(object sender, EventArgs e)
+        {
+            Boolean eveRunning = isEveRunning();
+            if (eveRunning == eveRunningLast)
+            {
+                return;
+            }
+            eveRunningLast = eveRunning;
+            if (eveRunning)
+            {
+                setState(STATE.START);
+            }
+            else
+            {
+                setState(STATE.STOP);
+            }
+        }
+
+        private void execFileDiscoverTimer(object sender, EventArgs e)
+        {
+            updateLatestIntelFiles();
+        }
+
+        private void execFileReaderTimer(object sender, EventArgs e)
+        {
+            FileStream logFileStream;
+            StreamReader logFileReader;
+
+            String line;
+            String lastLine;
+            Boolean lastLineFound;
+
+            foreach (String roomName in Configuration.RoomsToMonitor)
+            {
+                FileInfo logfile = null;
+                roomToFile.TryGetValue(roomName, out logfile);
+                if (logfile == null)
+                {
+                    Debug.WriteLine("KIU Skipping room: " + roomName);
+                    continue;
+                }
+                logFileStream = new FileStream(logfile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                logFileReader = new StreamReader(logFileStream);
+                                
+                line = null;                
+                lastLineFound = false;
+                roomToLastLine.TryGetValue(roomName, out lastLine);
+
+                Debug.WriteLine("KIU Checking: " + logfile + " -- Last: " + lastLine);
+
+                while (!logFileReader.EndOfStream)
+                {
+                    line = logFileReader.ReadLine();
+                    if (line.Trim().Length == 0)
+                    {
+                        continue;
+                    }
+
+                    line = line.Remove(0, 1);
+
+                    if (!lastLineFound)
+                    {                        
+                        if (line == lastLine)
+                        {
+                            lastLineFound = true;
+                        }
+                        continue;
+                    }
+                    
+                    roomToLastLine[roomName] = line;
+                    appendText(line + "\r\n"); 
+                    ReportIntel(line);                    
+                }
+
+                if (!lastLineFound)
+                {
+                    roomToLastLine[roomName] = line;
+                }
+
+                // Clean up
+                logFileReader.Close();
+                logFileStream.Close();
+
+            }
+        }
+
+        private void appendText(String line)
+        {
+            Debug.WriteLine("KIU append: " + line);
+            this.txtIntel.Invoke(new MethodInvoker(() => this.txtIntel.AppendText(line)));
+        }
         public frmMain()
         {
             InitializeComponent();
@@ -49,49 +212,14 @@ namespace BraveIntelReporter
                     }
                 }
             }
+
             if (Configuration.FirstRun)
             {
                 new frmSettings().ShowDialog();
             }
-            GetIntelLogFiles();
+            init();
             timer.Interval = Configuration.MonitorFrequency;
             timer.Start();
-        }
-
-
-
-        internal void GetIntelLogFiles()
-        {
-            FilesToMonitor = new List<FileInfo>();
-            // Get files with correct name and greatest timestamp <= now.
-            foreach (string roomname in Configuration.RoomsToMonitor)
-            {
-                FileInfo[] files = new DirectoryInfo(Configuration.LogDirectory)
-                        .GetFiles(roomname + "_*.txt", SearchOption.TopDirectoryOnly);
-                files = files.OrderByDescending(f => f.LastWriteTime).ToArray();
-                if (files.Count() > 0) FilesToMonitor.Add(files[0]);  
-            }
-            
-            // Synchronize List and Dictionary without losing existing LastLinesReported strings
-            foreach (FileInfo logfile in FilesToMonitor) // Add any new ones
-                if (!LastLinesReported.ContainsKey(logfile)) LastLinesReported.Add(logfile, string.Empty);
-            // And delete any old ones
-            List<FileInfo> removethese = LastLinesReported.Keys.Where(key => !FilesToMonitor.Contains(key)).ToList();
-            foreach (FileInfo fi in removethese) LastLinesReported.Remove(fi);
-
-            // If a new file is created, recheck to make sure we have the most up to date log files.
-            FileSystemWatcher watcher = new FileSystemWatcher(Configuration.LogDirectory);
-            watcher.NotifyFilter = NotifyFilters.CreationTime;
-            watcher.Created += new FileSystemEventHandler(FileCreated);
-            watcher.EnableRaisingEvents = true;
-            lblMonitoringFiles.Text = string.Empty;
-            foreach (FileInfo fi in FilesToMonitor) lblMonitoringFiles.Text += fi.Name + "\r\n";
-            
-        }
-
-        private void FileCreated(object sender, FileSystemEventArgs e)
-        {
-            GetIntelLogFiles();
         }
 
         private void ReportIntel(string lastline, string status = "")
@@ -104,9 +232,10 @@ namespace BraveIntelReporter
                 lastline = lastline.Replace('"', '\'');
                 string postMessage = new ReportLine(lastline, status).ToJson();
 
-                byte[] KiuResponse = client.UploadData(Configuration.ReportServer, "PUT", myEncoding.GetBytes(postMessage));
-                Debug.Write("Kiu << " + postMessage);
-                Debug.Write("\nKiu >> " + myEncoding.GetString(KiuResponse));
+                // byte[] KiuResponse = client.UploadData(Configuration.ReportServer, "PUT", myEncoding.GetBytes(postMessage));
+                byte[] KiuResponse = new byte[2];
+              //  Debug.Write("Kiu << " + postMessage);
+               // Debug.Write("\nKiu >> " + myEncoding.GetString(KiuResponse));
 
                 if (myEncoding.GetString(KiuResponse) == "OK\n") reported++;
             }
@@ -114,84 +243,12 @@ namespace BraveIntelReporter
             {
                 failed++;
                 if (ex.Message == "The remote server returned an error: (401) Unauthorized.")
-                    txtIntel.AppendText("Authorization Token Invalid.  Try refreshing your auth token in settings.\r\n");
+                    appendText("Authorization Token Invalid.  Try refreshing your auth token in settings.\r\n");
                 else if (ex.Message == "The remote server returned an error: (426) 426.")
-                    txtIntel.AppendText("Client version not supported.  Please close and restart application to update. (May require two restarts.)\r\n");
+                    appendText("Client version not supported.  Please close and restart application to update. (May require two restarts.)\r\n");
                 else
-                    txtIntel.AppendText(string.Format("Intel Server Error: {0}\r\n", ex.Message));
+                    appendText(string.Format("Intel Server Error: {0}\r\n", ex.Message));
                 Debug.Write(string.Format("Exception: {0}", ex.Message));
-            }
-        }
-
-        private void timer_Tick(object sender, EventArgs e)
-        {
-            // Check global config on occassion for live updates
-            if ((DateTime.Now - LastGlobalConfigCheck).TotalMinutes > Configuration.ConfigCheckFrequency)
-            {
-                string report = string.Empty;
-                Configuration.GetGlobalConfig(out report);
-                txtIntel.AppendText(report);
-                LastGlobalConfigCheck = DateTime.Now;
-            }
-            // Check EVE Program Status
-            var processes = Process.GetProcesses().Where(p => p.ProcessName.ToLower() == "exefile").ToList();
-            if (!EveIsRunning && processes.Count == 0) return; // Eve still isn't running and we know it.
-            if (processes.Count == 0 && EveIsRunning) // We think EVE is running, but it's not.
-            {
-                // EVE is not running
-                timer.Interval = 300000;
-                EveIsRunning = false;
-                ReportIntel(string.Empty, "stop");
-                txtIntel.AppendText("EVE is not running.  Will recheck for EVE process on 5 minute intervals. \r\n");
-                return;
-            }
-            if (!EveIsRunning && processes.Count > 0) // We didn't think EVE was running, but it is.
-            {
-                timer.Interval = Configuration.MonitorFrequency;
-                txtIntel.AppendText("EVE started.\r\n");
-                ReportIntel(string.Empty, "start");
-                EveIsRunning = true;
-                GetIntelLogFiles();
-            }
-
-            if ((DateTime.UtcNow - LastTimeReported).TotalMinutes > 5)
-            {
-                GetIntelLogFiles();
-                ReportIntel(string.Empty, "running");
-                LastTimeReported = DateTime.UtcNow;
-            }
-            lblReported.Text = reported.ToString();
-            lblFailed.Text = failed.ToString();
-            foreach (FileInfo logfile in FilesToMonitor)
-            {
-                bool lastlinefound = false;
-
-                FileStream logFileStream = new FileStream(logfile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                StreamReader logFileReader = new StreamReader(logFileStream);
-
-                while (!logFileReader.EndOfStream)
-                {
-                    string line = logFileReader.ReadLine();
-                    if (line.Length > 0) line = line.Remove(0, 1);
-                    if (!line.StartsWith("[ 20")) continue;
-                    if ((DateTime.UtcNow - LastTimeReported).TotalMinutes > 2) LastLinesReported[logfile] = string.Empty;
-                    double timeFromNow = (DateTime.Parse(line.Substring(2, 19)) - DateTime.UtcNow).TotalMinutes;
-                    if (Math.Abs(timeFromNow) > 2) continue; // Don't report intel that hasn't happened in the last 2 minutes.
-                    if (line == LastLinesReported[logfile] || LastLinesReported[logfile] == string.Empty)
-                        lastlinefound = true;
-                    if (lastlinefound && line != LastLinesReported[logfile]) // we've past the last line reported
-                    {
-                        LastLinesReported[logfile] = line;
-                        LastTimeReported = DateTime.Parse(line.Substring(2, 19));
-                        ReportIntel(line);
-                        txtIntel.AppendText("[" + line.Substring(13) + "\r\n");
-                    }
-                }
-                
-                // Clean up
-                logFileReader.Close();
-                logFileStream.Close();
-                
             }
         }
 
@@ -227,7 +284,7 @@ namespace BraveIntelReporter
 
         private void label4_Click(object sender, EventArgs e)
         {
-            
+
         }
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)

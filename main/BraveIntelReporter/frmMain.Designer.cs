@@ -97,12 +97,7 @@
             this.lblFailed.Name = "lblFailed";
             this.lblFailed.Size = new System.Drawing.Size(13, 13);
             this.lblFailed.TabIndex = 4;
-            this.lblFailed.Text = "0";
-            // 
-            // timer
-            // 
-            this.timer.Interval = 250;
-            this.timer.Tick += new System.EventHandler(this.timer_Tick);
+            this.lblFailed.Text = "0";           
             // 
             // notifyIcon1
             // 
