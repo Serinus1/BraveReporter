@@ -23,6 +23,8 @@ namespace BraveIntelReporter
             else labelVersion.Text = "Development Version";
 
             txtDescription.Text = string.Empty;
+            txtDescription.AppendText("Version 1.0.0.9 - Network checks. Maybe set eve to background option. Checks periodically for updates to the gloabl config. ");
+            txtDescription.AppendText("\r\n");
             txtDescription.AppendText("Version 1.0.0.8 - Wasn't properly saving settings, and I shouldn't try to get this done before a fleet in 4 minutes. ");
             txtDescription.AppendText("\r\n");
             txtDescription.AppendText("Version 1.0.0.7 - Fix a folder bug. ");
@@ -123,6 +125,11 @@ namespace BraveIntelReporter
         private void frmAbout_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void okButton_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
 
     }

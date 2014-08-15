@@ -20,6 +20,7 @@ namespace BraveIntelReporter
         long failed = 0;
         public List<FileInfo> FilesToMonitor;
         public DateTime LastTimeReported = DateTime.Now;
+        private DateTime LastGlobalConfigCheck = DateTime.Now;
         public Dictionary<FileInfo, string> LastLinesReported = new Dictionary<FileInfo, string>();
         public bool EveIsRunning = false;
 
@@ -31,7 +32,23 @@ namespace BraveIntelReporter
 
         private void frmMain_Load(object sender, EventArgs e)
         {
-            Configuration.GetConfig();
+
+            string report = string.Empty;
+            bool haveglobalsettings = false;
+            while (!haveglobalsettings)
+            {
+                haveglobalsettings = Configuration.GetConfig(out report);
+                if (!haveglobalsettings)
+                {
+                    txtIntel.AppendText(report);
+                    txtIntel.AppendText("Waiting 30 seconds and retrying.");
+                    for (int i = 1; i < 300; i++) // A lazy way of waiting 30 seconds but keeping the UI responsive without multithreading. 
+                    {
+                        Application.DoEvents();
+                        System.Threading.Thread.Sleep(100);
+                    }
+                }
+            }
             if (Configuration.FirstRun)
             {
                 new frmSettings().ShowDialog();
@@ -51,7 +68,7 @@ namespace BraveIntelReporter
             {
                 FileInfo[] files = new DirectoryInfo(Configuration.LogDirectory)
                         .GetFiles(roomname + "_*.txt", SearchOption.TopDirectoryOnly);
-                files = files.OrderByDescending(f => f.LastAccessTime).ToArray();
+                files = files.OrderByDescending(f => f.LastWriteTime).ToArray();
                 if (files.Count() > 0) FilesToMonitor.Add(files[0]);  
             }
             
@@ -108,6 +125,14 @@ namespace BraveIntelReporter
 
         private void timer_Tick(object sender, EventArgs e)
         {
+            // Check global config on occassion for live updates
+            if ((DateTime.Now - LastGlobalConfigCheck).TotalMinutes > Configuration.ConfigCheckFrequency)
+            {
+                string report = string.Empty;
+                Configuration.GetGlobalConfig(out report);
+                txtIntel.AppendText(report);
+                LastGlobalConfigCheck = DateTime.Now;
+            }
             // Check EVE Program Status
             var processes = Process.GetProcesses().Where(p => p.ProcessName.ToLower() == "exefile").ToList();
             if (!EveIsRunning && processes.Count == 0) return; // Eve still isn't running and we know it.
