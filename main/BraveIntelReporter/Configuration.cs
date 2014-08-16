@@ -123,6 +123,7 @@ namespace BraveIntelReporter
                 if (node.Attributes["type"].InnerText == "intel") RoomsToMonitor.Add(node.InnerText);
             ReportServer = new Uri(configFile.SelectSingleNode("BraveReporterSettings/IntelServer").InnerText);
             MonitorFrequency = int.Parse(configFile.SelectSingleNode("BraveReporterSettings/MonitorFrequency").InnerText);
+            if (MonitorFrequency < 500) MonitorFrequency = 500;
             if (configFile.SelectSingleNode("BraveReporterSettings/MapLink") != null)
                 MapURL = configFile.SelectSingleNode("BraveReporterSettings/MapLink").InnerText;
             return true;

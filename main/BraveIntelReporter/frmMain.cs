@@ -32,6 +32,7 @@ namespace BraveIntelReporter
         private bool eveRunningLast = false;
         private Dictionary<String, FileInfo> roomToFile = new Dictionary<String, FileInfo>();
         private Dictionary<String, String> roomToLastLine = new Dictionary<String, String>();
+        private Dictionary<FileInfo, long> fileToOffset = new Dictionary<FileInfo, long>();
 
         #region SetEveToBackground
         /// <summary>
@@ -166,7 +167,7 @@ namespace BraveIntelReporter
 
                 FileInfo[] files = new DirectoryInfo(Configuration.LogDirectory)
                         .GetFiles(roomName + "_*.txt", SearchOption.TopDirectoryOnly);
-                FileInfo fi = files.OrderByDescending(f => f.LastWriteTime).First();
+                FileInfo fi = files.OrderByDescending(f => f.LastWriteTime).FirstOrDefault();
                 if (fi != null)
                 {
                     roomToFile[roomName] = fi;
@@ -174,6 +175,13 @@ namespace BraveIntelReporter
                     report += fi.Name + "\r\n";
                 }
             }
+
+            // Clear offset list of old files if necessary.
+            List<FileInfo> deletethese = new List<FileInfo>();
+            foreach(FileInfo fi in fileToOffset.Keys)
+                if (!roomToFile.ContainsValue(fi)) deletethese.Add(fi);
+            foreach (FileInfo fi in deletethese)
+                fileToOffset.Remove(fi);
 
             // If a new file is created, recheck to make sure we have the most up to date log files.
             FileSystemWatcher watcher = new FileSystemWatcher(Configuration.LogDirectory);
@@ -216,6 +224,7 @@ namespace BraveIntelReporter
                 execFileReaderTimer(null, null);
 
                 timerFileDiscover.Start();
+                timerFileReader.Interval = Configuration.MonitorFrequency;
                 timerFileReader.Start();
                 ReportIntel(string.Empty, "start");
                 appendVerbose("EVE State Change.  Current State: " + Enum.GetName(typeof(STATE), state));
@@ -288,26 +297,27 @@ namespace BraveIntelReporter
             StreamReader logFileReader;
 
             String line;
-            String lastLine;
-            Boolean lastLineFound;
 
             foreach (String roomName in Configuration.RoomsToMonitor)
             {
                 FileInfo logfile = null;
                 roomToFile.TryGetValue(roomName, out logfile);
+                long offset = 0;
+                fileToOffset.TryGetValue(logfile, out offset);
+
                 if (logfile == null)
                 {
                     Debug.WriteLine("KIU Skipping room: " + roomName);
                     continue;
                 }
+
+                logfile.Refresh();
+                Debug.WriteLine("Offset: " + offset.ToString());
+                Debug.WriteLine("File Length: " + logfile.Length.ToString());
+                if (offset != 0 && logfile.Length == offset) continue; // No new data in file
                 logFileStream = new FileStream(logfile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 logFileReader = new StreamReader(logFileStream);
-                                
-                line = null;                
-                lastLineFound = false;
-                roomToLastLine.TryGetValue(roomName, out lastLine);
-
-                Debug.WriteLine("KIU Checking: " + logfile + " -- Last: " + lastLine);
+                logFileReader.BaseStream.Seek(offset, SeekOrigin.Begin);
 
                 while (!logFileReader.EndOfStream)
                 {
@@ -317,27 +327,19 @@ namespace BraveIntelReporter
                         continue;
                     }
 
-                    line = line.Remove(0, 1);
-
-                    if (!lastLineFound)
-                    {                        
-                        if (line == lastLine)
-                        {
-                            lastLineFound = true;
-                        }
-                        continue;
-                    }
-                    
-                    roomToLastLine[roomName] = line;
+                    //line = line.Remove(0, 1);
+                    if (line.Length < 23) continue;
+                    DateTime utcTimeOfLine = DateTime.MinValue;
+                    if (!DateTime.TryParse(line.Substring(2, 19), out utcTimeOfLine)) continue;
+                    Double minutesFromNow = Math.Abs(DateTime.UtcNow.Subtract(utcTimeOfLine).TotalMinutes);
+                    if (minutesFromNow > 2) continue;
                     appendText(line); 
-                    ReportIntel(line);
+                    //ReportIntel(line);
                     LastIntelReported = DateTime.Now;
                 }
-
-                if (!lastLineFound)
-                {
-                    roomToLastLine[roomName] = line;
-                }
+                offset = logfile.Length;
+                if (fileToOffset.ContainsKey(logfile)) fileToOffset[logfile] = offset;
+                else fileToOffset.Add(logfile, offset);
 
                 // Clean up
                 logFileReader.Close();
