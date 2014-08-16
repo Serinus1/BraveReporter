@@ -334,7 +334,7 @@ namespace BraveIntelReporter
                     Double minutesFromNow = Math.Abs(DateTime.UtcNow.Subtract(utcTimeOfLine).TotalMinutes);
                     if (minutesFromNow > 2) continue;
                     appendText(line); 
-                    //ReportIntel(line);
+                    ReportIntel(line);
                     LastIntelReported = DateTime.Now;
                 }
                 offset = logfile.Length;
