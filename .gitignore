@@ -15,6 +15,7 @@ $RECYCLE.BIN/
 *.msp
 
 *.pfx
+*.suo
 
 # =========================
 # Operating System Files
