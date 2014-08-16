@@ -12,3 +12,4 @@ C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debu
 C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.application
 C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.exe
 C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.pdb
+C:\Users\Serinus\Documents\GitHub\BraveReporter\main\BraveIntelReporter\obj\Debug\BraveIntelReporter.csprojResolveAssemblyReference.cache
