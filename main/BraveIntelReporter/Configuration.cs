@@ -62,6 +62,8 @@ namespace BraveIntelReporter
         /// Folder to save application configuration files.
         /// </summary>
         public static string MyFolder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "EVE", "BraveIntelReporter");
+        public static bool Verbose = true;
+        public static bool SetEveToBackground = false;
 
         public static bool GetConfig(out string report)
         {
@@ -87,11 +89,15 @@ namespace BraveIntelReporter
                     LogDirectory = configFile.SelectSingleNode("BraveReporterSettings/LogDirectory").InnerText;
                 if (configFile.SelectSingleNode("BraveReporterSettings/AuthToken") != null)
                     AuthToken = configFile.SelectSingleNode("BraveReporterSettings/AuthToken").InnerText;
+                if (configFile.SelectSingleNode("BraveReporterSettings/Verbose") != null)
+                    Verbose = bool.Parse(configFile.SelectSingleNode("BraveReporterSettings/Verbose").InnerText);
+                if (configFile.SelectSingleNode("BraveReporterSettings/SetEveToBackground") != null)
+                    SetEveToBackground = bool.Parse(configFile.SelectSingleNode("BraveReporterSettings/SetEveToBackground").InnerText);
                 if (rkApp.GetValue("BraveIntelReporter") != null)
                     RunOnStartup = true;
                 report = "Loaded local settings.";
             }
-            report = "Local settings not found. Using defaults.";
+            else report = "Local settings not found. Using defaults.";
         }
         internal static bool GetGlobalConfig(out string report)
         {
@@ -101,7 +107,7 @@ namespace BraveIntelReporter
                 client.DownloadFile("http://serinus.us/eve/intelGlobalConfig.xml", System.IO.Path.Combine(MyFolder, "intelGlobalConfig.xml"));
                 report = "Global config updated.";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 if (!File.Exists(System.IO.Path.Combine(MyFolder, "intelGlobalConfig.xml")))
                 {
@@ -120,6 +126,11 @@ namespace BraveIntelReporter
             if (configFile.SelectSingleNode("BraveReporterSettings/MapLink") != null)
                 MapURL = configFile.SelectSingleNode("BraveReporterSettings/MapLink").InnerText;
             return true;
+        }
+
+        internal static void Save()
+        {
+            Save(RunOnStartup);
         }
 
         internal static void Save(bool runOnStartup)
@@ -143,6 +154,14 @@ namespace BraveIntelReporter
             XmlNode authtoken = localSettings.CreateElement("AuthToken");
             authtoken.InnerText = Configuration.AuthToken;
             rootNode.AppendChild(authtoken);
+
+            XmlNode setToBackGround = localSettings.CreateElement("SetEveToBackground");
+            setToBackGround.InnerText = Configuration.SetEveToBackground.ToString();
+            rootNode.AppendChild(setToBackGround);
+
+            XmlNode verbose = localSettings.CreateElement("Verbose");
+            verbose.InnerText = Configuration.Verbose.ToString();
+            rootNode.AppendChild(verbose);
 
             localSettings.Save(System.IO.Path.Combine(MyFolder, "IntelReporterLocalSettings.xml"));
 

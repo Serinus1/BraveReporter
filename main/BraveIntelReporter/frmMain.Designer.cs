@@ -41,8 +41,13 @@
             this.lblMonitoringFiles = new System.Windows.Forms.Label();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.mnuViewMap = new System.Windows.Forms.ToolStripMenuItem();
+            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.outputToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuOutputMinimal = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuOutputVerbose = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuSetEveToBackground = new System.Windows.Forms.ToolStripMenuItem();
+            this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.mnuSettings = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -97,7 +102,7 @@
             this.lblFailed.Name = "lblFailed";
             this.lblFailed.Size = new System.Drawing.Size(13, 13);
             this.lblFailed.TabIndex = 4;
-            this.lblFailed.Text = "0";           
+            this.lblFailed.Text = "0";
             // 
             // notifyIcon1
             // 
@@ -125,13 +130,12 @@
             this.lblMonitoringFiles.Size = new System.Drawing.Size(10, 13);
             this.lblMonitoringFiles.TabIndex = 6;
             this.lblMonitoringFiles.Text = "-";
-            this.lblMonitoringFiles.Click += new System.EventHandler(this.label4_Click);
             // 
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mnuViewMap,
-            this.mnuSettings,
+            this.settingsToolStripMenuItem,
             this.aboutToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
@@ -146,19 +150,62 @@
             this.mnuViewMap.Text = "View Map";
             this.mnuViewMap.Click += new System.EventHandler(this.mnuViewMap_Click);
             // 
+            // settingsToolStripMenuItem
+            // 
+            this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.outputToolStripMenuItem,
+            this.mnuSetEveToBackground,
+            this.optionsToolStripMenuItem});
+            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
+            this.settingsToolStripMenuItem.Text = "Settings";
+            this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
+            // 
+            // outputToolStripMenuItem
+            // 
+            this.outputToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.mnuOutputMinimal,
+            this.mnuOutputVerbose});
+            this.outputToolStripMenuItem.Name = "outputToolStripMenuItem";
+            this.outputToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
+            this.outputToolStripMenuItem.Text = "Output";
+            // 
+            // mnuOutputMinimal
+            // 
+            this.mnuOutputMinimal.Name = "mnuOutputMinimal";
+            this.mnuOutputMinimal.Size = new System.Drawing.Size(118, 22);
+            this.mnuOutputMinimal.Text = "Minimal";
+            this.mnuOutputMinimal.Click += new System.EventHandler(this.mnuOutputMinimal_Click);
+            // 
+            // mnuOutputVerbose
+            // 
+            this.mnuOutputVerbose.Checked = true;
+            this.mnuOutputVerbose.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.mnuOutputVerbose.Name = "mnuOutputVerbose";
+            this.mnuOutputVerbose.Size = new System.Drawing.Size(118, 22);
+            this.mnuOutputVerbose.Text = "Verbose";
+            this.mnuOutputVerbose.Click += new System.EventHandler(this.mnuOutputVerbose_Click);
+            // 
+            // mnuSetEveToBackground
+            // 
+            this.mnuSetEveToBackground.Name = "mnuSetEveToBackground";
+            this.mnuSetEveToBackground.Size = new System.Drawing.Size(202, 22);
+            this.mnuSetEveToBackground.Text = "Keep EVE in Background";
+            this.mnuSetEveToBackground.Click += new System.EventHandler(this.mnuSetEveToBackground_Click);
+            // 
+            // optionsToolStripMenuItem
+            // 
+            this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
+            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
+            this.optionsToolStripMenuItem.Text = "Options...";
+            this.optionsToolStripMenuItem.Click += new System.EventHandler(this.optionsToolStripMenuItem_Click);
+            // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.aboutToolStripMenuItem.Text = "About...";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
-            // 
-            // mnuSettings
-            // 
-            this.mnuSettings.Name = "mnuSettings";
-            this.mnuSettings.Size = new System.Drawing.Size(61, 20);
-            this.mnuSettings.Text = "Settings";
-            this.mnuSettings.Click += new System.EventHandler(this.mnuSettings_Click);
             // 
             // frmMain
             // 
@@ -180,7 +227,6 @@
             this.Text = "Brave Intel Reporter";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.frmMain_FormClosed);
             this.Load += new System.EventHandler(this.frmMain_Load);
-            this.ResizeEnd += new System.EventHandler(this.frmMain_ResizeEnd);
             this.Resize += new System.EventHandler(this.frmMain_Resize);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
@@ -203,7 +249,12 @@
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem mnuViewMap;
-        private System.Windows.Forms.ToolStripMenuItem mnuSettings;
+        private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem outputToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem mnuOutputMinimal;
+        private System.Windows.Forms.ToolStripMenuItem mnuOutputVerbose;
+        private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem mnuSetEveToBackground;
     }
 }
 
