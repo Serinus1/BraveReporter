@@ -22,7 +22,7 @@ namespace BraveIntelReporter
         long reported = 0;
         long failed = 0;
 
-        private DateTime LastGlobalConfigCheck = DateTime.Now;
+        private DateTime LastIntelReported = DateTime.MinValue;
 
         private STATE state = STATE.INIT;
         private System.Timers.Timer timerEveProcessCheck = new System.Timers.Timer();
@@ -148,6 +148,12 @@ namespace BraveIntelReporter
 
         private void updateLatestIntelFiles()
         {
+            if (LastIntelReported > (DateTime.Now.AddMilliseconds(-1 * timerFileDiscover.Interval))) return; //If intel has been reported recently, we don't need to recheck.
+            if (state == STATE.RUNNING)
+            {
+                appendVerbose("Sending heartbeat.");
+                ReportIntel(string.Empty, "Running");
+            }
             appendVerbose("Updating chatlog file list.");
             string oldfiles = string.Empty;
             foreach (FileInfo fi in roomToFile.Values)
@@ -182,7 +188,7 @@ namespace BraveIntelReporter
             {
                 if (newfiles.Length > 2) newfiles = newfiles.Substring(0, newfiles.Length - 2); // trim the last comma and space
                 if (oldfiles.Length > 2) oldfiles = oldfiles.Substring(0, oldfiles.Length - 2); // trim the last comma and space
-                appendText(string.Format("Intel Files Changed. Old Files: {0}, New Files: {1}", oldfiles, newfiles));
+                if (state == STATE.RUNNING) appendText(string.Format("Intel Files Changed. Old Files: {0}, New Files: {1}", oldfiles, newfiles));
             }
             lblMonitoringFiles.Invoke(new MethodInvoker(() => lblMonitoringFiles.Text = report));
         }
@@ -205,32 +211,35 @@ namespace BraveIntelReporter
 
             if (STATE.START == nState)
             {
-                timerFileDiscover.Start();
-                updateLatestIntelFiles();
+                execEveTimer(null, null);
+                execFileDiscoverTimer(null, null);
+                execFileReaderTimer(null, null);
 
+                timerFileDiscover.Start();
                 timerFileReader.Start();
                 ReportIntel(string.Empty, "start");
+                appendVerbose("EVE State Change.  Current State: " + Enum.GetName(typeof(STATE), state));
+                setState(STATE.RUNNING);
             }
             if (STATE.STOP == nState)
             {
                 timerFileDiscover.Stop();
                 timerFileReader.Stop();
                 ReportIntel(string.Empty, "stop");
+                appendVerbose("EVE State Change.  Current State: " + Enum.GetName(typeof(STATE), state));
             }
-            appendVerbose("EVE State Change.  Current State: " + Enum.GetName(typeof(STATE), state));
         }
 
         private void init()
         {
             timerEveProcessCheck.Elapsed += new ElapsedEventHandler(execEveTimer);
-            timerEveProcessCheck.Interval = 60000;
+            timerEveProcessCheck.Interval = 1000 * 60 * 1;
             timerEveProcessCheck.Start();
            
             timerFileDiscover.Elapsed += new ElapsedEventHandler(execFileDiscoverTimer);
             timerFileDiscover.Interval = 1000 * 60 * 2;
 
             timerFileReader.Elapsed += new ElapsedEventHandler(execFileReaderTimer);
-            timerFileReader.Interval = Configuration.MonitorFrequency;
 
             timerConfigCheck.Elapsed += new ElapsedEventHandler(execConfigCheckTimer);
             timerConfigCheck.Interval = Configuration.ConfigCheckFrequency * 1000 * 60;
@@ -241,7 +250,6 @@ namespace BraveIntelReporter
             mnuSetEveToBackground.Checked = Configuration.SetEveToBackground;
             mnuOutputVerbose.Checked = Configuration.Verbose;
             mnuOutputMinimal.Checked = !Configuration.Verbose;
-            execEveTimer(null, null);
         }
 
         private void execEveTimer(object sender, EventArgs e)
@@ -322,7 +330,8 @@ namespace BraveIntelReporter
                     
                     roomToLastLine[roomName] = line;
                     appendText(line); 
-                    ReportIntel(line);                    
+                    ReportIntel(line);
+                    LastIntelReported = DateTime.Now;
                 }
 
                 if (!lastLineFound)
@@ -379,8 +388,9 @@ namespace BraveIntelReporter
                 new frmSettings().ShowDialog();
             }
             init();
-            timer.Interval = Configuration.MonitorFrequency;
-            timer.Start();
+
+            setState(STATE.START);
+
         }
 
         private void ReportIntel(string lastline, string status = "")

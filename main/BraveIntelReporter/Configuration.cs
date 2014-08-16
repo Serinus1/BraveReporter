@@ -14,7 +14,7 @@ namespace BraveIntelReporter
     public static class Configuration
     {
         /// <summary>
-        /// How often to check for changes in the log file in milliseconds.  Can be set in IntelReporterLocalSettings.xml. 
+        /// How often to check for changes in the log file in milliseconds.  Can be set in intelGlobalConfig.xml. 
         /// </summary>
         public static int MonitorFrequency = 500;
         /// <summary>

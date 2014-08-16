@@ -35,7 +35,6 @@
             this.label2 = new System.Windows.Forms.Label();
             this.lblReported = new System.Windows.Forms.Label();
             this.lblFailed = new System.Windows.Forms.Label();
-            this.timer = new System.Windows.Forms.Timer(this.components);
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.label3 = new System.Windows.Forms.Label();
             this.lblMonitoringFiles = new System.Windows.Forms.Label();
@@ -242,7 +241,6 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label lblReported;
         private System.Windows.Forms.Label lblFailed;
-        private System.Windows.Forms.Timer timer;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label lblMonitoringFiles;
