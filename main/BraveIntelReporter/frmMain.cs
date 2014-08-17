@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows.Automation;
@@ -33,6 +34,7 @@ namespace BraveIntelReporter
         private Dictionary<String, FileInfo> roomToFile = new Dictionary<String, FileInfo>();
         private Dictionary<String, String> roomToLastLine = new Dictionary<String, String>();
         private Dictionary<FileInfo, long> fileToOffset = new Dictionary<FileInfo, long>();
+        private static Object readerLock = new Object(); // Ensures that only one thread can read files at a time.
 
         #region SetEveToBackground
         /// <summary>
@@ -139,7 +141,7 @@ namespace BraveIntelReporter
 
         enum STATE
         {
-            INIT, START, RUNNING, STOP
+            INIT, START, RUNNING, DOWNTIME, STOP
         };
 
         private Boolean isEveRunning()
@@ -150,6 +152,11 @@ namespace BraveIntelReporter
         private void updateLatestIntelFiles()
         {
             if (LastIntelReported > (DateTime.Now.AddMilliseconds(-1 * timerFileDiscover.Interval))) return; //If intel has been reported recently, we don't need to recheck.
+            if (DateTime.UtcNow.TimeOfDay > new TimeSpan(10, 59, 00) && DateTime.UtcNow.TimeOfDay < new TimeSpan(11, 05, 00))
+            {
+                setState(STATE.DOWNTIME);
+                appendText("Downtime Detected.  Waiting for new chat logs to be created.");
+            }
             if (state == STATE.RUNNING)
             {
                 appendVerbose("Sending heartbeat.");
@@ -196,7 +203,8 @@ namespace BraveIntelReporter
             {
                 if (newfiles.Length > 2) newfiles = newfiles.Substring(0, newfiles.Length - 2); // trim the last comma and space
                 if (oldfiles.Length > 2) oldfiles = oldfiles.Substring(0, oldfiles.Length - 2); // trim the last comma and space
-                if (state == STATE.RUNNING) appendText(string.Format("Intel Files Changed. Old Files: {0}, New Files: {1}", oldfiles, newfiles));
+                if (state == STATE.RUNNING || state == STATE.DOWNTIME) appendText(string.Format("Intel Files Changed. Old Files: {0}, New Files: {1}", oldfiles, newfiles));
+                if (state == STATE.DOWNTIME) setState(STATE.START);
             }
             lblMonitoringFiles.Invoke(new MethodInvoker(() => lblMonitoringFiles.Text = report));
         }
@@ -233,6 +241,12 @@ namespace BraveIntelReporter
             if (STATE.STOP == nState)
             {
                 timerFileDiscover.Stop();
+                timerFileReader.Stop();
+                ReportIntel(string.Empty, "stop");
+                appendVerbose("EVE State Change.  Current State: " + Enum.GetName(typeof(STATE), state));
+            }
+            if (STATE.DOWNTIME == nState)
+            {
                 timerFileReader.Stop();
                 ReportIntel(string.Empty, "stop");
                 appendVerbose("EVE State Change.  Current State: " + Enum.GetName(typeof(STATE), state));
@@ -293,59 +307,73 @@ namespace BraveIntelReporter
 
         private void execFileReaderTimer(object sender, EventArgs e)
         {
+            if (!Monitor.TryEnter(readerLock))
+            {
+                Debug.WriteLine("File Reader Thread: Locked");
+                return; // Ensures that only one thread can read files at a time.
+            }
+            else Debug.WriteLine("File Reader Thread: Unlocked");
+
             FileStream logFileStream;
             StreamReader logFileReader;
 
             String line;
 
-            foreach (String roomName in Configuration.RoomsToMonitor)
+            try
             {
-                FileInfo logfile = null;
-                roomToFile.TryGetValue(roomName, out logfile);
-                long offset = 0;
-                fileToOffset.TryGetValue(logfile, out offset);
-
-                if (logfile == null)
+                foreach (String roomName in Configuration.RoomsToMonitor)
                 {
-                    Debug.WriteLine("KIU Skipping room: " + roomName);
-                    continue;
-                }
+                    FileInfo logfile = null;
+                    roomToFile.TryGetValue(roomName, out logfile);
+                    long offset = 0;
+                    fileToOffset.TryGetValue(logfile, out offset);
 
-                logfile.Refresh();
-                Debug.WriteLine("Offset: " + offset.ToString());
-                Debug.WriteLine("File Length: " + logfile.Length.ToString());
-                if (offset != 0 && logfile.Length == offset) continue; // No new data in file
-                logFileStream = new FileStream(logfile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                logFileReader = new StreamReader(logFileStream);
-                logFileReader.BaseStream.Seek(offset, SeekOrigin.Begin);
-
-                while (!logFileReader.EndOfStream)
-                {
-                    line = logFileReader.ReadLine();
-                    if (line.Trim().Length == 0)
+                    if (logfile == null)
                     {
+                        Debug.WriteLine("KIU Skipping room: " + roomName);
                         continue;
                     }
 
-                    //line = line.Remove(0, 1);
-                    if (line.Length < 23) continue;
-                    DateTime utcTimeOfLine = DateTime.MinValue;
-                    if (!DateTime.TryParse(line.Substring(2, 19), out utcTimeOfLine)) continue;
-                    Double minutesFromNow = Math.Abs(DateTime.UtcNow.Subtract(utcTimeOfLine).TotalMinutes);
-                    if (minutesFromNow > 2) continue;
-                    appendText(line); 
-                    ReportIntel(line);
-                    LastIntelReported = DateTime.Now;
-                }
-                offset = logfile.Length;
-                if (fileToOffset.ContainsKey(logfile)) fileToOffset[logfile] = offset;
-                else fileToOffset.Add(logfile, offset);
+                    logfile.Refresh();
+                    Debug.WriteLine("Offset: " + offset.ToString());
+                    Debug.WriteLine("File Length: " + logfile.Length.ToString());
+                    if (offset != 0 && logfile.Length == offset) continue; // No new data in file
+                    logFileStream = new FileStream(logfile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    logFileReader = new StreamReader(logFileStream);
+                    logFileReader.BaseStream.Seek(offset, SeekOrigin.Begin);
 
-                // Clean up
-                logFileReader.Close();
-                logFileStream.Close();
+                    while (!logFileReader.EndOfStream)
+                    {
+                        line = logFileReader.ReadLine();
+                        if (line.Trim().Length == 0)
+                        {
+                            continue;
+                        }
 
+                        //line = line.Remove(0, 1);
+                        if (line.Length < 23) continue;
+                        DateTime utcTimeOfLine = DateTime.MinValue;
+                        if (!DateTime.TryParse(line.Substring(2, 19), out utcTimeOfLine)) continue;
+                        Double minutesFromNow = Math.Abs(DateTime.UtcNow.Subtract(utcTimeOfLine).TotalMinutes);
+                        if (minutesFromNow > 2) continue;
+                        appendText(line);
+                        ReportIntel(line);
+                        LastIntelReported = DateTime.Now;
+                    }
+                    offset = logfile.Length;
+                    if (fileToOffset.ContainsKey(logfile)) fileToOffset[logfile] = offset;
+                    else fileToOffset.Add(logfile, offset);
+
+                    // Clean up
+                    logFileReader.Close();
+                    logFileStream.Close();
+                } // foreach
+            } // try
+            catch (Exception ex)
+            {
+                appendText(string.Format("Intel Server Error: {0}\r\n", ex.Message));
             }
+            finally { Monitor.Exit(readerLock); }
         }
 
         private void appendText(String line)

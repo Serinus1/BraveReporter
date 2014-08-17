@@ -23,6 +23,8 @@ namespace BraveIntelReporter
             else labelVersion.Text = "Development Version";
 
             txtDescription.Text = string.Empty;
+            txtDescription.AppendText("Version 1.1.0.2 - Prevent duplicate intel reports.  Downtime detection.");
+            txtDescription.AppendText("\r\n");
             txtDescription.AppendText("Version 1.1.0.0 - Refactor.  Now monitors log files based on filesizes and offsets.");
             txtDescription.AppendText("\r\n");
             txtDescription.AppendText("Version 1.0.0.9 - Network checks. Set eve to background option. Checks periodically for updates to the global config. ");
