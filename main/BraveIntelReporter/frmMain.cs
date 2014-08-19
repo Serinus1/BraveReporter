@@ -310,10 +310,8 @@ namespace BraveIntelReporter
             if (!Monitor.TryEnter(readerLock))
             {
                 Debug.WriteLine("File Reader Thread: Locked");
-                appendVerbose(DateTime.UtcNow.ToLongTimeString() + " Thread locked.");
                 return; // Ensures that only one thread can read files at a time.
             }
-            else Debug.WriteLine("File Reader Thread: Unlocked");
 
             FileStream logFileStream;
             StreamReader logFileReader;
