@@ -20,7 +20,7 @@ namespace BraveIntelReporter
 
             if (ApplicationDeployment.IsNetworkDeployed)
                 labelVersion.Text = "Version " + ApplicationDeployment.CurrentDeployment.CurrentVersion;
-            else labelVersion.Text = "Development Version";
+            else labelVersion.Text = "Development Version 1.1.0.5";
 
             txtDescription.Text = string.Empty;
             txtDescription.AppendText("Version 1.1.0.2 - Prevent duplicate intel reports.  Downtime detection.");

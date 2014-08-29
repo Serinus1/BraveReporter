@@ -42,7 +42,7 @@ namespace BraveIntelReporter
             {
                 if (ApplicationDeployment.IsNetworkDeployed)
                     return ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString();
-                else return "Development";
+                else return "1.1.0.5";
             }
         }
     }
