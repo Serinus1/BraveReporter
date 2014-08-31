@@ -200,7 +200,7 @@ namespace BraveIntelReporter
                     Debug.WriteLine("KIU Skipping: " + fi);
                     continue;
                 }
-                
+
                 Debug.WriteLine("KIU Using: " + fi);
                 roomToFile[roomName] = fi;
                 report += fi.Name + "\r\n";
@@ -356,7 +356,7 @@ namespace BraveIntelReporter
 
                     long offset = 0;
                     fileToOffset.TryGetValue(logfile, out offset);
-                    
+
                     logfile.Refresh();
                     Debug.WriteLine("Offset: " + offset.ToString());
                     Debug.WriteLine("File Length: " + logfile.Length.ToString());
@@ -395,8 +395,6 @@ namespace BraveIntelReporter
             catch (Exception ex)
             {
                 appendText(string.Format("Intel Server Error: {0}\r\n", ex.Message));
-                appendText(string.Format("Intel Server Error: {0}\r\n", ex.StackTrace));
-                
             }
             finally { Monitor.Exit(readerLock); }
         }
