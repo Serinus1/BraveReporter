@@ -175,17 +175,40 @@ namespace BraveIntelReporter
                 FileInfo[] files = new DirectoryInfo(Configuration.LogDirectory)
                         .GetFiles(roomName + "_*.txt", SearchOption.TopDirectoryOnly);
                 FileInfo fi = files.OrderByDescending(f => f.LastWriteTime).FirstOrDefault();
-                if (fi != null)
+
+                if (fi == null)
                 {
-                    roomToFile[roomName] = fi;
-                    Debug.WriteLine("KIU Found: " + fi);
-                    report += fi.Name + "\r\n";
+                    continue;
                 }
+
+                Debug.WriteLine("KIU Latest: " + fi);
+
+                // Check if eve has opened this file -> Eve is running and user has joined channel
+                Boolean inUse = false;
+                try
+                {
+                    FileStream fs = fi.Open(FileMode.Open, FileAccess.Read, FileShare.None);
+                    fs.Close();
+                }
+                catch
+                {
+                    inUse = true;
+                }
+
+                if (!inUse)
+                {
+                    Debug.WriteLine("KIU Skipping: " + fi);
+                    continue;
+                }
+
+                Debug.WriteLine("KIU Using: " + fi);
+                roomToFile[roomName] = fi;
+                report += fi.Name + "\r\n";
             }
 
             // Clear offset list of old files if necessary.
             List<FileInfo> deletethese = new List<FileInfo>();
-            foreach(FileInfo fi in fileToOffset.Keys)
+            foreach (FileInfo fi in fileToOffset.Keys)
                 if (!roomToFile.ContainsValue(fi)) deletethese.Add(fi);
             foreach (FileInfo fi in deletethese)
                 fileToOffset.Remove(fi);
@@ -258,7 +281,7 @@ namespace BraveIntelReporter
             timerEveProcessCheck.Elapsed += new ElapsedEventHandler(execEveTimer);
             timerEveProcessCheck.Interval = 1000 * 60 * 1;
             timerEveProcessCheck.Start();
-           
+
             timerFileDiscover.Elapsed += new ElapsedEventHandler(execFileDiscoverTimer);
             timerFileDiscover.Interval = 1000 * 60 * 2;
 
@@ -324,14 +347,15 @@ namespace BraveIntelReporter
                 {
                     FileInfo logfile = null;
                     roomToFile.TryGetValue(roomName, out logfile);
-                    long offset = 0;
-                    fileToOffset.TryGetValue(logfile, out offset);
 
                     if (logfile == null)
                     {
                         Debug.WriteLine("KIU Skipping room: " + roomName);
                         continue;
                     }
+
+                    long offset = 0;
+                    fileToOffset.TryGetValue(logfile, out offset);
 
                     logfile.Refresh();
                     Debug.WriteLine("Offset: " + offset.ToString());
