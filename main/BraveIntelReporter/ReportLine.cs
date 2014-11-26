@@ -36,13 +36,11 @@ namespace BraveIntelReporter
             return sb.ToString();
         }
 
-        public string Version
+        public static string Version
         {
             get
             {
-                if (ApplicationDeployment.IsNetworkDeployed)
-                    return ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString();
-                else return "1.1.0.5";
+                return "1.1.0.6";
             }
         }
     }

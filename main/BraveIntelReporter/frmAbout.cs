@@ -19,10 +19,12 @@ namespace BraveIntelReporter
             lblDevelopers.Text = "Developed by: Serinus Gareth for use with Kiu Nakamura's intel map.";
 
             if (ApplicationDeployment.IsNetworkDeployed)
-                labelVersion.Text = "Version " + ApplicationDeployment.CurrentDeployment.CurrentVersion;
-            else labelVersion.Text = "Development Version 1.1.0.5";
+                labelVersion.Text = "Version " + ReportLine.Version;
+            else labelVersion.Text = "Development Version " + ReportLine.Version;
 
             txtDescription.Text = string.Empty;
+            txtDescription.AppendText("Version 1.1.0.6 - Attempted to address a version reporting issue.  Limited to one instance of the application.");
+            txtDescription.AppendText("\r\n");
             txtDescription.AppendText("Version 1.1.0.2 - Prevent duplicate intel reports.  Downtime detection.");
             txtDescription.AppendText("\r\n");
             txtDescription.AppendText("Version 1.1.0.0 - Refactor.  Now monitors log files based on filesizes and offsets.");
@@ -62,14 +64,6 @@ namespace BraveIntelReporter
                     }
                 }
                 return System.IO.Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().CodeBase);
-            }
-        }
-
-        public string AssemblyVersion
-        {
-            get
-            {
-                return Assembly.GetExecutingAssembly().GetName().Version.ToString();
             }
         }
 

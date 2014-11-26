@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
@@ -18,9 +19,20 @@ namespace BraveIntelReporter
         [STAThread]
         static void Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new frmMain());
+            string mutex_id = "BraveIntelReporter";
+            using (Mutex mutex = new Mutex(false, mutex_id))
+            {
+                if (!mutex.WaitOne(0, false))
+                {
+                    MessageBox.Show("Brave Intel Reporter is already running!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                    return;
+                }
+
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new frmMain());
+            }
+
         }
 
 
