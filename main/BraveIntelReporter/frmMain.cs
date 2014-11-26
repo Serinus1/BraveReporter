@@ -58,24 +58,28 @@ namespace BraveIntelReporter
         private static IntPtr myhandle;
         static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
         private static string processname = "exefile";
-
+        private Process SelectedKeepInBackgroundProcess = null;
 
         private void OnFocusChangedHandler(object src, AutomationFocusChangedEventArgs args)
         {
-            if (!mnuSetEveToBackground.Checked) return;
-            AutomationElement element = src as AutomationElement;
-
-            var processes = Process.GetProcesses().Where(p => p.ProcessName.ToLower() == processname.ToLower()).ToList();
-
-            if (processes.Count > 0)
-            {
-                Process process = processes[0];
-
-                int id = process.Id;
-                SetWindowPos(process.MainWindowHandle, HWND_BOTTOM, 0, 0, 0, 0, SetWindowPosFlags.DoNotReposition | SetWindowPosFlags.IgnoreMove | SetWindowPosFlags.DoNotActivate | SetWindowPosFlags.IgnoreResize);
-            }
+            if (!mnuSetEveToBackground.Checked || SelectedKeepInBackgroundProcess == null) return;
+            SetWindowPos(SelectedKeepInBackgroundProcess.MainWindowHandle, HWND_BOTTOM, 0, 0, 0, 0, SetWindowPosFlags.DoNotReposition | SetWindowPosFlags.IgnoreMove | SetWindowPosFlags.DoNotActivate | SetWindowPosFlags.IgnoreResize);
         }
 
+        private Process GetKeepInBackgroundProcess()
+        {
+            if (SelectedKeepInBackgroundProcess != null) return SelectedKeepInBackgroundProcess;
+            var processes = Process.GetProcesses().Where(p => p.ProcessName.ToLower() == processname.ToLower()).ToList();
+
+            if (processes.Count == 1) SelectedKeepInBackgroundProcess = processes[0];
+            else if (processes.Count > 1)
+            {
+                frmSelectProcess selectForm = new frmSelectProcess(processname);
+                selectForm.ShowDialog();
+                SelectedKeepInBackgroundProcess = selectForm.SelectedProcess;
+            }
+            return SelectedKeepInBackgroundProcess;
+        }
 
         [Flags()]
         enum SetWindowPosFlags : uint
@@ -296,6 +300,8 @@ namespace BraveIntelReporter
             mnuSetEveToBackground.Checked = Configuration.SetEveToBackground;
             mnuOutputVerbose.Checked = Configuration.Verbose;
             mnuOutputMinimal.Checked = !Configuration.Verbose;
+
+            if (Configuration.SetEveToBackground) GetKeepInBackgroundProcess();
         }
 
         private void execEveTimer(object sender, EventArgs e)
@@ -550,6 +556,11 @@ namespace BraveIntelReporter
             mnuSetEveToBackground.Checked = !mnuSetEveToBackground.Checked;
             Configuration.SetEveToBackground = mnuSetEveToBackground.Checked;
             Configuration.Save();
+            if (Configuration.SetEveToBackground)
+            {
+                SelectedKeepInBackgroundProcess = null;
+                GetKeepInBackgroundProcess();
+            }
         }
 
 
