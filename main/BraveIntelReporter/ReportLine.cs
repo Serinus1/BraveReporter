@@ -40,7 +40,7 @@ namespace BraveIntelReporter
         {
             get
             {
-                return "1.1.0.7";
+                return "1.1.0.8";
             }
         }
     }

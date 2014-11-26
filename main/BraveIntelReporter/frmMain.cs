@@ -451,7 +451,7 @@ namespace BraveIntelReporter
             setState(STATE.START);
 
         }
-
+        private bool InvalidAuthToken = false;
         private void ReportIntel(string lastline, string status = "")
         {
             Encoding myEncoding = System.Text.UTF8Encoding.UTF8;
@@ -469,8 +469,18 @@ namespace BraveIntelReporter
             catch (Exception ex)
             {
                 failed++;
-                if (ex.Message == "The remote server returned an error: (401) Unauthorized.")
+                if (ex.Message == "The remote server returned an error: (401) Unauthorized." && !InvalidAuthToken)
+                {
                     appendText("Authorization Token Invalid.  Try refreshing your auth token in settings.\r\n");
+                    if (Configuration.MapURL != string.Empty)
+                    {
+                        ProcessStartInfo sInfo = new ProcessStartInfo(Configuration.MapURL + "/?nav=uploader");
+                        Process.Start(sInfo);
+                    }
+                    MessageBox.Show("Authorization Token Invalid.  Try refreshing your auth token in settings.\r\n");
+                        new frmSettings().ShowDialog();
+                    InvalidAuthToken = true; // We really don't want to pop up windows and webpages more than once.
+                }
                 else if (ex.Message == "The remote server returned an error: (426) 426.")
                     appendText("Client version not supported.  Please close and restart application to update. (May require two restarts.)\r\n");
                 else

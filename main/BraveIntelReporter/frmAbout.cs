@@ -23,7 +23,9 @@ namespace BraveIntelReporter
             else labelVersion.Text = "Development Version " + ReportLine.Version;
 
             txtDescription.Text = string.Empty;
-            txtDescription.AppendText("Version 1.1.0.7 - Allow \"Always in Background\" with multiple EVE clients open.");
+            txtDescription.AppendText("Version 1.1.0.8 - Fixed the icon in the taskbar.");
+            txtDescription.AppendText("\r\n");
+            txtDescription.AppendText("Version 1.1.0.7 - Allow \"Always in Background\" with multiple EVE clients open.  Make invalid token more obvious, per Kiu's request.");
             txtDescription.AppendText("\r\n");
             txtDescription.AppendText("Version 1.1.0.6 - Attempted to address a version reporting issue.  Limited to one instance of the application.");
             txtDescription.AppendText("\r\n");
