@@ -47,6 +47,7 @@
             this.mnuSetEveToBackground = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuOutputStandard = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -164,6 +165,7 @@
             // 
             this.outputToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mnuOutputMinimal,
+            this.mnuOutputStandard,
             this.mnuOutputVerbose});
             this.outputToolStripMenuItem.Name = "outputToolStripMenuItem";
             this.outputToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
@@ -172,7 +174,7 @@
             // mnuOutputMinimal
             // 
             this.mnuOutputMinimal.Name = "mnuOutputMinimal";
-            this.mnuOutputMinimal.Size = new System.Drawing.Size(118, 22);
+            this.mnuOutputMinimal.Size = new System.Drawing.Size(152, 22);
             this.mnuOutputMinimal.Text = "Minimal";
             this.mnuOutputMinimal.Click += new System.EventHandler(this.mnuOutputMinimal_Click);
             // 
@@ -181,7 +183,7 @@
             this.mnuOutputVerbose.Checked = true;
             this.mnuOutputVerbose.CheckState = System.Windows.Forms.CheckState.Checked;
             this.mnuOutputVerbose.Name = "mnuOutputVerbose";
-            this.mnuOutputVerbose.Size = new System.Drawing.Size(118, 22);
+            this.mnuOutputVerbose.Size = new System.Drawing.Size(152, 22);
             this.mnuOutputVerbose.Text = "Verbose";
             this.mnuOutputVerbose.Click += new System.EventHandler(this.mnuOutputVerbose_Click);
             // 
@@ -205,6 +207,12 @@
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.aboutToolStripMenuItem.Text = "About...";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
+            // 
+            // mnuOutputStandard
+            // 
+            this.mnuOutputStandard.Name = "mnuOutputStandard";
+            this.mnuOutputStandard.Size = new System.Drawing.Size(152, 22);
+            this.mnuOutputStandard.Text = "Standard";
             // 
             // frmMain
             // 
@@ -253,6 +261,7 @@
         private System.Windows.Forms.ToolStripMenuItem mnuOutputVerbose;
         private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem mnuSetEveToBackground;
+        private System.Windows.Forms.ToolStripMenuItem mnuOutputStandard;
     }
 }
 

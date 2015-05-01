@@ -59,24 +59,78 @@ namespace BraveIntelReporter
         static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
         private static string processname = "exefile";
         private Process SelectedKeepInBackgroundProcess = null;
+        private List<Process> IgnoredKeepInBackgroundProcesses = new List<Process>();
 
         private void OnFocusChangedHandler(object src, AutomationFocusChangedEventArgs args)
         {
-            if (!mnuSetEveToBackground.Checked || SelectedKeepInBackgroundProcess == null) return;
-            SetWindowPos(SelectedKeepInBackgroundProcess.MainWindowHandle, HWND_BOTTOM, 0, 0, 0, 0, SetWindowPosFlags.DoNotReposition | SetWindowPosFlags.IgnoreMove | SetWindowPosFlags.DoNotActivate | SetWindowPosFlags.IgnoreResize);
+            if (!mnuSetEveToBackground.Checked) return;
+            // Two buckets, SelectedKeepInBackgroundProcess and IgnoredProcess.  When a new process is started, we should be able to guess which bucket it goes into.
+            var processes = Process.GetProcesses().Where(p => (p.ProcessName.ToLower() == processname.ToLower() && !p.HasExited)).ToList();
+            if (SelectedKeepInBackgroundProcess != null && SelectedKeepInBackgroundProcess.HasExited) SelectedKeepInBackgroundProcess = null;
+            // Check that all ignored processes still exist
+            for (int i = 0; i < IgnoredKeepInBackgroundProcesses.Count; i++ )
+            {
+                if (IgnoredKeepInBackgroundProcesses[i].HasExited)
+                {
+                    IgnoredKeepInBackgroundProcesses.Remove(IgnoredKeepInBackgroundProcesses[i]);
+                    i--;
+                }
+            }
+            int knownProcesses = (SelectedKeepInBackgroundProcess == null) ? 0 : 1;
+            knownProcesses += IgnoredKeepInBackgroundProcesses.Count;
+
+            if (knownProcesses < processes.Count)
+            {
+                if (SelectedKeepInBackgroundProcess != null)
+                { 
+                    // We have the process we want in the background, so ignore all the others.
+                    foreach (Process p in processes)
+                    {
+                        if (SelectedKeepInBackgroundProcess.Id != p.Id && !IgnoredKeepInBackgroundProcesses.Contains(p))
+                            IgnoredKeepInBackgroundProcesses.Add(p);
+                    }
+                }
+                else if (knownProcesses == processes.Count - 1)
+                {
+                    // If we know all but one process, and we don't have a background process, we've found the one to select.
+                    foreach (Process p in processes)
+                    {
+                        if (!IgnoredKeepInBackgroundProcesses.Contains(p))
+                        {
+                            SelectedKeepInBackgroundProcess = p;
+                            break;
+                        }
+                    }
+                }
+                else // There's more than one unknown process and we don't know which to select.
+                {
+                    mnuSetEveToBackground.Checked = false;
+                    IgnoredKeepInBackgroundProcesses.Clear();
+                    appendText("Unknown which Eve process should be set to background.  Disabling SetToBackground feature.");
+                    GetKeepInBackgroundProcess();
+                    return;
+                }
+            }
+            if (SelectedKeepInBackgroundProcess != null)
+                SetWindowPos(SelectedKeepInBackgroundProcess.MainWindowHandle, HWND_BOTTOM, 0, 0, 0, 0, SetWindowPosFlags.DoNotReposition | SetWindowPosFlags.IgnoreMove | SetWindowPosFlags.DoNotActivate | SetWindowPosFlags.IgnoreResize);
         }
 
         private Process GetKeepInBackgroundProcess()
         {
-            if (SelectedKeepInBackgroundProcess != null) return SelectedKeepInBackgroundProcess;
             var processes = Process.GetProcesses().Where(p => p.ProcessName.ToLower() == processname.ToLower()).ToList();
 
-            if (processes.Count == 1) SelectedKeepInBackgroundProcess = processes[0];
+            if (processes.Count == 1 && !IgnoredKeepInBackgroundProcesses.Contains(processes[0])) SelectedKeepInBackgroundProcess = processes[0];
+            int knownprocesscount = 0;
+            if (SelectedKeepInBackgroundProcess != null) knownprocesscount++;
+
+            if (SelectedKeepInBackgroundProcess != null) return SelectedKeepInBackgroundProcess;
             else if (processes.Count > 1)
             {
                 frmSelectProcess selectForm = new frmSelectProcess(processname);
                 selectForm.ShowDialog();
                 SelectedKeepInBackgroundProcess = selectForm.SelectedProcess;
+                IgnoredKeepInBackgroundProcesses = processes;
+                IgnoredKeepInBackgroundProcesses.Remove(SelectedKeepInBackgroundProcess);
             }
             return SelectedKeepInBackgroundProcess;
         }
@@ -155,6 +209,11 @@ namespace BraveIntelReporter
 
         private void updateLatestIntelFiles()
         {
+            if (Configuration.EnableReporting == false)
+            {
+                appendVerbose("Reporting disabled in settings.");
+                return;
+            }
             if (LastIntelReported > (DateTime.Now.AddMilliseconds(-1 * timerFileDiscover.Interval))) return; //If intel has been reported recently, we don't need to recheck.
             if (DateTime.UtcNow.TimeOfDay > new TimeSpan(10, 59, 00) && DateTime.UtcNow.TimeOfDay < new TimeSpan(11, 05, 00))
             {
@@ -341,7 +400,11 @@ namespace BraveIntelReporter
                 Debug.WriteLine("File Reader Thread: Locked");
                 return; // Ensures that only one thread can read files at a time.
             }
-
+            if (!Configuration.EnableReporting)
+            {
+                Debug.WriteLine("Reporting disabled in settings.");
+                return;
+            }
             FileStream logFileStream;
             StreamReader logFileReader;
 
@@ -570,6 +633,11 @@ namespace BraveIntelReporter
             {
                 SelectedKeepInBackgroundProcess = null;
                 GetKeepInBackgroundProcess();
+            }
+            else
+            {
+                SelectedKeepInBackgroundProcess = null;
+                IgnoredKeepInBackgroundProcesses.Clear();
             }
         }
 

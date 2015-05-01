@@ -64,6 +64,7 @@ namespace BraveIntelReporter
         public static string MyFolder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "EVE", "BraveIntelReporter");
         public static bool Verbose = true;
         public static bool SetEveToBackground = false;
+        public static bool EnableReporting = true;
 
         public static bool GetConfig(out string report)
         {
@@ -93,6 +94,8 @@ namespace BraveIntelReporter
                     Verbose = bool.Parse(configFile.SelectSingleNode("BraveReporterSettings/Verbose").InnerText);
                 if (configFile.SelectSingleNode("BraveReporterSettings/SetEveToBackground") != null)
                     SetEveToBackground = bool.Parse(configFile.SelectSingleNode("BraveReporterSettings/SetEveToBackground").InnerText);
+                if (configFile.SelectSingleNode("BraveReporterSettings/EnableReporting") != null)
+                    EnableReporting = bool.Parse(configFile.SelectSingleNode("BraveReporterSettings/EnableReporting").InnerText);
                 if (rkApp.GetValue("BraveIntelReporter") != null)
                     RunOnStartup = true;
                 report = "Loaded local settings.";
@@ -163,6 +166,10 @@ namespace BraveIntelReporter
             XmlNode verbose = localSettings.CreateElement("Verbose");
             verbose.InnerText = Configuration.Verbose.ToString();
             rootNode.AppendChild(verbose);
+
+            XmlNode enableReporting = localSettings.CreateElement("EnableReporting");
+            enableReporting.InnerText = Configuration.EnableReporting.ToString();
+            rootNode.AppendChild(enableReporting);
 
             localSettings.Save(System.IO.Path.Combine(MyFolder, "IntelReporterLocalSettings.xml"));
 

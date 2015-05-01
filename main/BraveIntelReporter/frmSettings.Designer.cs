@@ -39,6 +39,7 @@
             this.label3 = new System.Windows.Forms.Label();
             this.linkLabel1 = new System.Windows.Forms.LinkLabel();
             this.label4 = new System.Windows.Forms.Label();
+            this.chkDisableReporting = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // txtChatlogPath
@@ -143,11 +144,22 @@
             this.label4.TabIndex = 10;
             this.label4.Text = "click uploader.)";
             // 
+            // chkDisableReporting
+            // 
+            this.chkDisableReporting.AutoSize = true;
+            this.chkDisableReporting.Location = new System.Drawing.Point(305, 82);
+            this.chkDisableReporting.Name = "chkDisableReporting";
+            this.chkDisableReporting.Size = new System.Drawing.Size(110, 17);
+            this.chkDisableReporting.TabIndex = 11;
+            this.chkDisableReporting.Text = "Disable Reporting";
+            this.chkDisableReporting.UseVisualStyleBackColor = true;
+            // 
             // frmSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(451, 171);
+            this.Controls.Add(this.chkDisableReporting);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.linkLabel1);
             this.Controls.Add(this.label3);
@@ -180,5 +192,6 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.LinkLabel linkLabel1;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.CheckBox chkDisableReporting;
     }
 }

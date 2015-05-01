@@ -24,7 +24,7 @@
     <MapFileExtensions>true</MapFileExtensions>
     <InstallUrl>http://serinus.us/eve/braveintel/</InstallUrl>
     <UpdateUrl>http://serinus.us/eve/braveintel/</UpdateUrl>
-    <ApplicationRevision>9</ApplicationRevision>
+    <ApplicationRevision>10</ApplicationRevision>
     <ApplicationVersion>1.1.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>

@@ -34,12 +34,14 @@ namespace BraveIntelReporter
             txtChatlogPath.Text = Configuration.LogDirectory;
             txtAuthToken.Text = Configuration.AuthToken;
             chkRunOnStartup.Checked = Configuration.RunOnStartup;
+            chkDisableReporting.Checked = !Configuration.EnableReporting;
         }
 
         private void btnSave_Click(object sender, EventArgs e)
         {
             Configuration.LogDirectory = txtChatlogPath.Text;
             Configuration.AuthToken = txtAuthToken.Text;
+            Configuration.EnableReporting = !chkDisableReporting.Checked;
             Configuration.Save(chkRunOnStartup.Checked);
             this.Close();
         }
