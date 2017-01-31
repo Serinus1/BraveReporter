@@ -35,6 +35,7 @@ namespace BraveIntelReporter
         private Dictionary<String, String> roomToLastLine = new Dictionary<String, String>();
         private Dictionary<FileInfo, long> fileToOffset = new Dictionary<FileInfo, long>();
         private static Object readerLock = new Object(); // Ensures that only one thread can read files at a time.
+        private FileSystemWatcher newFileWatcher = null;
 
         #region SetEveToBackground
         /// <summary>
@@ -277,10 +278,13 @@ namespace BraveIntelReporter
                 fileToOffset.Remove(fi);
 
             // If a new file is created, recheck to make sure we have the most up to date log files.
-            FileSystemWatcher watcher = new FileSystemWatcher(Configuration.LogDirectory);
-            watcher.NotifyFilter = NotifyFilters.CreationTime;
-            watcher.Created += new FileSystemEventHandler(FileCreated);
-            watcher.EnableRaisingEvents = true;
+            if (this.newFileWatcher == null)
+            {
+                this.newFileWatcher = new FileSystemWatcher(Configuration.LogDirectory);
+                this.newFileWatcher.NotifyFilter = NotifyFilters.CreationTime;
+                this.newFileWatcher.Created += new FileSystemEventHandler(FileCreated);
+                this.newFileWatcher.EnableRaisingEvents = true;
+            }
 
             string newfiles = string.Empty;
             foreach (FileInfo fi in roomToFile.Values)
